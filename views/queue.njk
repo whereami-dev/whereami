@@ -1,0 +1,174 @@
+{% extends "layout.njk" %}
+
+{% block content %}
+<div class="ui middle aligned center aligned grid" style="min-height: 60vh;">
+    <div class="column" style="max-width: 600px;">
+        <h2> 注意：不点 Cancel 直接退出页面不会取消匹配。</h2>
+        <h2 class="ui header aligned header">
+            <i class="search icon"></i>
+            <div class="content">
+                匹配对手
+                <div class="sub header">正在为您匹配地理知识对手，请耐心等待...</div>
+            </div>
+        </h2>
+
+        <div class="ui segment">
+            <div class="ui active centered inline loader" id="main-loader"></div>
+            <p style="margin-top: 20px;" id="status-text">Connecting to matchmaking...</p>
+            
+            <div class="ui huge statistic">
+                <div class="value" id="queue-count">{{ queueSize or 1 }}</div>
+                <div class="label">等待队列大小</div>
+            </div>
+            <br>
+            <div class="ui tiny steps">
+                <div class="completed step">
+                    <i class="user icon"></i>
+                    <div class="content">
+                        <div class="title">已加入队列</div>
+                    </div>
+                </div>
+                <div class="active step" id="search-step">
+                    <i class="search icon"></i>
+                    <div class="content">
+                        <div class="title">创建比赛</div>
+                    </div>
+                </div>
+                <div class="step" id="duel-step">
+                    <i class="map marker alternate icon"></i>
+                    <div class="content">
+                        <div class="title">开始决斗</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+        <form method="POST" action="/matchmaking/cancel" id="cancel-form">
+            <button class="ui red button" type="submit" id="cancel-btn">
+                <i class="cancel icon"></i>
+                Cancel
+            </button>
+        </form>
+        
+        <div class="ui basic segment">
+            <p class="ui small text">
+                <i class="info circle icon"></i>
+                Enhanced matchmaking system
+            </p>
+            <div class="ui tiny labels" id="debug-info">
+                <div class="ui green label">
+                    Status: <span id="polling-status">Starting...</span>
+                </div>
+                <div class="ui blue label">
+                    Last Check: <span id="last-check">Never</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let pollingInterval;
+let searchTime = 0;
+let isMatchFound = false;
+let lastQueueSize = {{ queueSize or 1 }};
+
+console.log('📊 Initial queue size:', lastQueueSize);
+
+async function checkStatus() {
+    try {
+        if (isMatchFound) return;
+        
+        searchTime++;
+        const response = await fetch('/matchmaking/status');
+        
+        if (!response.ok) {
+            console.error('Failed to fetch status:', response.status);
+            $('#polling-status').text('Error').css('color', 'red');
+            return;
+        }
+    
+        const data = await response.json();
+        
+        $('#last-check').text(new Date().toLocaleTimeString());
+        $('#polling-status').text('Active').css('color', 'green');
+    
+        if (data.queueSize !== undefined) {
+            const newQueueSize = data.queueSize;
+            if (newQueueSize !== lastQueueSize) {
+                console.log(`📊 Queue size updated: ${lastQueueSize} → ${newQueueSize}`);
+                lastQueueSize = newQueueSize;
+                $('#queue-count').text(newQueueSize);
+            }
+        }
+    
+        if (data.status === 'found') {
+            console.log('🎉 MATCH FOUND! Redirecting now...', data);
+            handleMatchFound(data);
+        } else if (data.status === 'waiting') {
+            let statusMessage;
+            if (lastQueueSize === 1) {
+                statusMessage = `正在匹配地理对手，请耐心等待... (${searchTime}s)`;
+            } else if (lastQueueSize >= 2) {
+                statusMessage = `Found ${lastQueueSize} players - creating match... (${searchTime}s)`;
+            } else {
+                statusMessage = `Searching for players... (${searchTime}s)`;
+            }
+            
+            $('#status-text').text(statusMessage);
+        } else if (data.status === 'not_in_queue') {
+            console.log('❌ User not in queue anymore, redirecting to lobby');
+            window.location.href = '/lobby';
+        }
+        
+    } catch (error) {
+        console.error('Error during polling:', error);
+        $('#polling-status').text('Error').css('color', 'red');
+    }
+}
+
+function handleMatchFound(data) {
+    if (isMatchFound) return;
+    
+    isMatchFound = true;
+    clearInterval(pollingInterval);
+    
+    console.log('🎉 Match found! Processing...', data);
+    
+    $('#main-loader').removeClass('active').addClass('disabled');
+    $('#status-text').html('<i class="checkmark icon green"></i> Match Found! Redirecting to duel...');
+    $('#queue-count').text('0');
+    
+    $('#search-step').removeClass('active').addClass('completed');
+    $('#duel-step').addClass('completed active');
+    
+    $('#cancel-btn').addClass('disabled loading');
+    $('#cancel-form').off('submit');
+    
+    console.log('🎮 Redirecting to duel:', data.duelId);
+    setTimeout(() => {
+        window.location.href = `/duel/${data.duelId}`;
+    }, 1000);
+}
+
+$(document).ready(function() {
+    checkStatus();
+    pollingInterval = setInterval(checkStatus, 1000);
+    
+    $('#polling-status').text('Active').css('color', 'green');
+});
+
+$(window).on('beforeunload', function() {
+    clearInterval(pollingInterval);
+});
+
+$('#cancel-form').on('submit', function(e) {
+    if (isMatchFound) {
+        e.preventDefault();
+        return false;
+    }
+});
+
+console.log('✅ Whereami Queue system ready!');
+</script>
+{% endblock %}

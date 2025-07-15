@@ -1,0 +1,17 @@
+{% extends "layout.njk" %}
+
+{% block content %}
+<div class="ui middle aligned center aligned grid" style="min-height: 60vh;">
+    <div class="column" style="max-width: 450px;">
+        <div class="ui icon header">
+            <i class="exclamation triangle icon"></i>
+            {{ title or '错误' }}
+        </div>
+        <p>{{ message or '未知错误，请联系管理员。' }}</p>
+        <a href="/lobby" class="ui primary button">
+            <i class="home icon"></i>
+            返回大厅
+        </a>
+    </div>
+</div>
+{% endblock %}

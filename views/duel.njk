@@ -1,0 +1,1794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title or 'Whereami Duel' }}</title>
+    <link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/semantic-ui@2.5.0/dist/semantic.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://fastly.jsdelivr.net/npm/semantic-ui@2.5.0/dist/semantic.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+    
+/* 指南針的視窗容器 */
+#compass-container {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 300px; /* 指南針可見寬度 */
+  height: 40px;
+  background-color: rgba(0, 0, 0, 0.6);
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+  overflow: hidden; /* 隱藏超出視窗的標尺部分 */
+  z-index: 10;
+}
+
+/* 中間的紅色指針 */
+#compass-marker {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid #ff4d4d; /* 紅色三角形 */
+}
+
+/* 包含所有刻度和標籤的標尺帶，它將會移動 */
+#compass-strip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  /* 讓移動更平滑 */
+}
+
+/* public/css/style.css */
+
+.compass-label {
+  color: white;
+  font-weight: bold;
+  font-size: 1rem;
+  position: absolute;
+  top: 50%;
+  /* 變更此處：使用 translateX(-50%) 來精確水平置中 */
+  transform: translate(-50%, -50%);
+  text-shadow: 0 0 3px black;
+}
+.compass-tick {
+  background-color: white;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.tick-major {
+  width: 2px;
+  height: 15px;
+}
+
+.tick-minor {
+  width: 1px;
+  height: 10px;
+  opacity: 0.7;
+}
+
+        /* 全屏地图样式 */
+        body, html {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Lato', sans-serif;
+        }
+
+        .fullscreen-game {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #street-view {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            background: #000;
+        }
+
+        .results-map-container {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 1350px;
+            height: 650px;
+            z-index: 10;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            overflow: hidden;
+            border: 3px solid white;
+        }
+
+        #results-map {
+            width: 100%;
+            height: 100%;
+        }
+
+        .score-panel {
+            position: absolute;
+            top: 340px;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 15px 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+            min-width: 200px;
+        }
+
+        .score-panel.playing {
+            top: 20px;
+        }
+
+        .score-panel.left {
+            left: 20px;
+        }
+
+        .score-panel.right {
+            right: 20px;
+        }
+
+        .player-name {
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 16px;
+            color: #2185d0;
+        }
+
+        .player-score {
+            font-size: 24px;
+            font-weight: bold;
+            color: #21ba45;
+        }
+
+        .round-info {
+            position: absolute;
+            bottom: 45px;
+            left: 10px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            backdrop-filter: blur(10px);
+        }
+
+        .map-container {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 10;
+            width: 300px;
+            height: 200px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        .map-container:hover {
+            transform: scale(1.05);
+        }
+
+        .map-container.hidden {
+            display: none;
+        }
+
+        #guess-map {
+            width: 100%;
+            height: 100%;
+        }
+
+        .game-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            display: flex;
+            gap: 15px;
+        }
+
+        .control-btn {
+            padding: 12px 24px;
+            background: rgba(33, 133, 208, 0.9);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .control-btn:hover {
+            background: rgba(33, 133, 208, 1);
+            transform: translateY(-2px);
+        }
+
+        .control-btn:disabled {
+            background: rgba(158, 158, 158, 0.8);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .control-btn.guess-btn {
+            background: rgba(33, 186, 69, 0.9);
+        }
+
+        .control-btn.guess-btn:hover:not(:disabled) {
+            background: rgba(33, 186, 69, 1);
+        }
+
+        /* 修复：计时器位置调整，避免与回合信息重叠 */
+        .timer-display {
+            position: absolute;
+            top: 70px; /* 从80px改为70px，避免与round-info重叠 */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            background: rgba(255, 193, 7, 0.95);
+            color: #333;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            backdrop-filter: blur(10px);
+        }
+
+        /* 修复：等待状态位置调整 */
+        .waiting-status {
+            position: absolute;
+            top: 110px; /* 从120px改为110px */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            background: rgba(33, 186, 69, 0.95);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            backdrop-filter: blur(10px);
+        }
+
+        /* 网络状态指示器 */
+        .network-status {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            z-index: 100;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .network-status.connected {
+            background: rgba(33, 186, 69);
+            color: white;
+        }
+
+        .network-status.disconnected {
+            background: rgba(219, 40, 40);
+            color: white;
+        }
+
+        .network-status.reconnecting {
+            background: rgba(255, 193, 7);
+            color: #333;
+        }
+
+        /* 修复：对手状态指示器位置调整，避免重叠 */
+        .opponent-status {
+            position: absolute;
+            top: 70px !important;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            background: rgba(33, 133, 208, 0.95);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .opponent-status.guessed {
+            background: rgba(33, 186, 69, 0.95);
+        }
+
+        .waiting-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 15;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+        }
+
+        .waiting-overlay.hidden {
+            display: none;
+        }
+
+        .results-overlay {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            background: rgba(255, 255, 255, 0.98);
+            padding: 20px 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            max-width: 600px;
+            width: 90%;
+            backdrop-filter: blur(15px);
+        }
+
+        .map-legend {
+            position: absolute;
+            top: 10px !important;
+            right: 20px;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+            font-size: 14px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .legend-color.green { background: #21ba45; }
+        .legend-color.blue { background: #2185d0; }
+        .legend-color.red { background: #db2828; }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+    		background: rgba(0, 0, 0, 0.8);
+            z-index: 25;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+        }
+
+        .finished-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 25;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+        }
+
+        .street-view-loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+            color: white;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .results-map-container {
+                width: 90%;
+                height: 250px;
+                top: 10px;
+            }
+
+            .score-panel {
+                top: 270px;
+                min-width: 150px;
+                padding: 10px 15px;
+            }
+
+            .score-panel.playing {
+                top: 10px;
+            }
+
+            .score-panel.left {
+                left: 10px;
+            }
+
+            .score-panel.right {
+                right: 10px;
+            }
+
+            .map-container {
+                width: 250px;
+                height: 150px;
+                bottom: 10px;
+                right: 10px;
+            }
+
+            .timer-display {
+                top: 60px !important;
+                font-size: 12px;
+                padding: 6px 12px;
+            }
+
+            .waiting-status {
+                top: 100px !important;
+                font-size: 12px;
+                padding: 6px 12px;
+            }
+
+            .game-controls {
+                bottom: 10px;
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .control-btn {
+                padding: 10px 20px;
+                font-size: 14px;
+            }
+
+            .map-legend {
+                right: 10px;
+                top: 270px;
+                font-size: 12px;
+            }
+        }
+
+        .progress-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.3);
+            z-index: 10;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #21ba45, #2185d0);
+            transition: width 0.3s ease;
+            width: {{ (duel.currentRound / duel.totalRounds * 100) }}%;
+        }
+    </style>
+</head>
+<body>
+    <!-- 网络状态指示器 -->
+    <div class="network-status connected" id="network-status">
+        <i class="wifi icon"></i>
+        <span id="network-text">Connected</span>
+    </div>
+
+    <div class="fullscreen-game">
+        {% if duel.status == 'generating' %}
+            Generating street view plz wait.
+
+        {% elif duel.status == 'preparing' %}
+            <!-- 准备状态 -->
+            <div class="loading-overlay" id="preparing-overlay">
+                <div>
+                    <div class="ui active centered inline loader"></div>
+                    <h2 style="margin-top: 20px;">正在准备对决</h2>
+                    <p>对决将在 <span id="prep-countdown" style="color: #ff6b6b; font-size: 1.5em;">5</span> 秒后开始</p>
+                    <div style="margin-top: 20px;">
+                        <h4>如未自动加载街景请刷新。</h4>
+                    </div>
+                </div>
+            </div>
+
+        {% elif duel.status == 'playing' %}
+            <!-- 游戏状态 - 显示街景 -->
+            
+            <!-- 街景视图 -->
+            <div id="street-view">
+                <div class="street-view-loading" id="street-view-loading">
+                    <div>
+                        <div class="ui active centered inline loader"></div>
+                        <h3>正在加载街景...</h3>
+                        <p>如长时间未显示请检查您的网络状态并刷新。</p>
+                    </div>
+                </div>
+            </div>
+            <div id="compass-container">
+                <div id="compass-strip"></div>
+                <div id="compass-marker"></div>
+            </div>
+
+            <!-- 玩家得分面板 - 左上角 (我的得分) -->
+            <div class="score-panel left playing">
+                <div class="player-name">
+                    <i class="user icon"></i>
+                    {{ user.username }}
+                    {% if user.userType %}
+                        <span class="ui mini label">{{ user.userType }}</span>
+                    {% endif %}
+                </div>
+                <div class="player-score" id="my-score">{{ duel.myScore }}</div>
+                <div style="font-size: 12px; color: #666;">Points</div>
+            </div>
+
+            <!-- 对手得分面板 - 右上角 -->
+            <div class="score-panel right playing">
+                <div class="player-name">
+                    <i class="user icon"></i>
+                    {{ opponent.name }}
+                </div>
+                <div class="player-score" id="opponent-score">{{ duel.opponentScore }}</div>
+                <div style="font-size: 12px; color: #666;">Points</div>
+            </div>
+
+            <!-- 回合信息 - 顶部中央 -->
+            <div class="round-info">
+                <i class="map marker alternate icon"></i>
+                Round {{ duel.currentRound }} of {{ duel.totalRounds }}
+            </div>
+
+            <!-- 修复：计时器显示 - 15秒倒计时 -->
+            <div class="timer-display" id="timer-display" style="{% if not duel.firstPickAt %}display: none;{% endif %}">
+                <i class="clock icon"></i>
+                <span id="timer-text">仅剩 <span id="timer-seconds">15</span>s</span>
+            </div>
+
+            <!-- 修复：等待状态显示 - 只在我已经猜测时显示 -->
+            <div class="waiting-status" id="waiting-status" style="{% if not (duel.myGuessLat and duel.myGuessLng) %}display: none;{% endif %}">
+                <i class="checkmark icon"></i>
+                正在等待 {{ opponent.name }}...
+            </div>
+
+            <!-- 修复：对手状态指示器 - 只显示一个图标，默认隐藏 -->
+            <div class="opponent-status" id="opponent-status" style="display: none;">
+                <span id="opponent-status-text">{{ opponent.name }} 正在思考...</span>
+            </div>
+
+            <!-- 地图容器 - 右下角 -->
+            <div class="map-container" id="map-container">
+                <div id="guess-map"></div>
+            </div>
+
+            <!-- 游戏控制按钮 -->
+            <div class="game-controls" id="game-controls" style="{% if duel.myGuessLat and duel.myGuessLng %}display: none;{% endif %}">
+                <button class="control-btn" id="toggle-map-btn">
+                    <i class="map icon"></i>
+                    切换地图显示
+                </button>
+                <button class="control-btn guess-btn" id="guess-btn" disabled>
+                    <i class="crosshairs icon"></i>
+                    猜测（或按空格键）
+                </button>
+            </div>
+
+            <!-- 进度条 -->
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+
+        {% elif duel.status == 'results' %}
+            <!-- 结果状态 - 显示黑色背景而不是街景 -->
+			<div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #efefef, #efefef); z-index: 1;"></div>
+            
+            <!-- 结果地图 - 顶部中央 -->
+            <div class="results-map-container">
+                <div id="results-map"></div>
+            </div>
+
+            <!-- 地图图例 -->
+            <div class="map-legend">
+                <h4 style="margin: 0 0 10px 0; color: #333;">图例</h4>
+                <div class="legend-item">
+                    <div class="legend-color green"></div>
+                    <span>答案位置</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color blue"></div>
+					<span>{{ user.username }} 的猜测位置</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color red"></div>
+                    <span>{{ opponent.name }} 的猜测位置</span>
+                </div>
+            </div>
+
+            <!-- 玩家得分面板 - 地图下方 -->
+            <div class="score-panel left">
+                <div class="player-name">
+                    <i class="user icon"></i>
+                    {{ user.username }}
+                </div>
+                <div class="player-score">{{ duel.myScore + duel.myRoundScore }}</div>
+                <div style="font-size: 12px; color: #666;">总分</div>
+                {% if duel.myDistance is not none %}
+                <div style="margin-top: 8px;">
+                    {% if duel.myDistance == -1 %}
+                        <div class="ui small grey label">
+                            未猜测
+                        </div>
+                    {% else %}
+                        <div class="ui small {% if duel.myDistance < 1 %}green{% elif duel.myDistance < 10 %}yellow{% elif duel.myDistance < 100 %}orange{% else %}red{% endif %} label">
+							{% if duel.myDistance < 1 %}
+                    			{{ (duel.myDistance * 1000)|round(0) }} m
+                			{% else %}
+                    			{{ duel.myDistance|round(2) }} km
+                			{% endif %}
+                        </div>
+                    {% endif %}
+                    {% if duel.myRoundScore is not none %}
+                    <div class="ui small green label">
+                        +{{ duel.myRoundScore }} pts
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="score-panel right">
+                <div class="player-name">
+                    <i class="user icon"></i>
+                    {{ opponent.name }}
+                </div>
+                <div class="player-score">{{ duel.opponentScore + duel.opponentRoundScore }}</div>
+                <div style="font-size: 12px; color: #666;">Total Points</div>
+                {% if duel.opponentDistance is not none %}
+                <div style="margin-top: 8px;">
+                    {% if duel.opponentDistance == -1 %}
+                        <div class="ui small grey label">
+                            未猜测
+                        </div>
+                    {% else %}
+                        <div class="ui small {% if duel.opponentDistance < 1 %}green{% elif duel.opponentDistance < 10 %}yellow{% elif duel.opponentDistance < 100 %}orange{% else %}red{% endif %} label">
+							{% if duel.opponentDistance < 1 %}
+                    			{{ (duel.opponentDistance * 1000)|round(0) }} m
+                			{% else %}
+                    			{{ duel.opponentDistance|round(2) }} km
+                			{% endif %}
+                        </div>
+                    {% endif %}
+                    {% if duel.opponentRoundScore is not none %}
+                    <div class="ui small green label">
+                        +{{ duel.opponentRoundScore }} pts
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- 结果显示覆盖层 - 底部 -->
+            <div class="results-overlay">
+                <h3 class="ui center aligned header" style="margin: 0 0 15px 0;">
+                    <i class="trophy icon"></i>
+                    Round {{ duel.currentRound }} Results
+                </h3>
+
+                <!-- 轮次获胜者 -->
+                {% if duel.myRoundScore is not none and duel.opponentRoundScore is not none %}
+                <div class="ui center aligned basic segment" style="margin: 0 0 15px 0; padding: 10px;">
+                    {% if duel.myRoundScore > duel.opponentRoundScore %}
+                        <div class="ui green label">
+                            <i class="trophy icon"></i>
+                            你赢了这一轮！
+                        </div>
+                    {% elif duel.myRoundScore < duel.opponentRoundScore %}
+                        <div class="ui red label">
+                            <i class="frown icon"></i>
+                            {{ opponent.name }} 赢了这一轮！
+                        </div>
+                    {% else %}
+                        <div class="ui yellow label">
+                            <i class="handshake icon"></i>
+                            平局！
+                        </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <div class="ui center aligned basic segment" style="margin: 0; padding: 10px;">
+                    <p style="margin: 0;">
+                        {% if duel.currentRound >= duel.totalRounds %}
+                            <i class="flag checkered icon"></i>
+                            <span id="results-countdown" style="font-weight: bold; color: #db2828;">10</span> 秒后将显示最终结果...
+                        {% else %}
+                            <i class="forward icon"></i>
+                            第 {{ duel.currentRound + 1 }} 轮将在 <span id="results-countdown" style="font-weight: bold; color: #21ba45;">10</span> 秒后开始...
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+
+        {% elif duel.status == 'finished' %}
+            <!-- 完成状态 -->
+			<div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #efefef, #efefef); z-index: 1;"></div>
+            <div class="finished-overlay">
+                <div>
+                    <h1 class="ui header">
+                        <i class="flag checkered icon"></i>
+                        决斗结束！
+                    </h1>
+
+                    {% if duel.myScore > duel.opponentScore %}
+                        <div class="ui huge green label">
+                            <i class="trophy icon"></i>
+                            胜利！
+                        </div>
+                        <h3 style="color: #21ba45;">🎉 恭喜获胜！</h3>
+                    {% elif duel.myScore < duel.opponentScore %}
+                        <div class="ui huge red label">
+                            <i class="frown icon"></i>
+                            失败
+                        </div>
+						<h3 style="color: #db2828;">😔 很遗憾，你输了。</h3>
+                    {% else %}
+                        <div class="ui huge yellow label">
+                            <i class="handshake icon"></i>
+                            平局
+                        </div>
+						<h3 style="color: #f2711c;">🤝 达成了平局！</h3>
+                    {% endif %}
+
+                    <div class="ui massive statistic" style="margin: 20px 0;">
+                        <div class="value">{{ duel.myScore }} - {{ duel.opponentScore }}</div>
+                        <div class="label">最终分数</div>
+                    </div>
+
+                    <div style="margin-top: 30px;">
+                        <a href="/lobby" class="ui big primary button">
+                            <i class="home icon"></i>
+                            返回大厅
+                        </a>
+                        <a href="/lobby" class="ui big green button">
+                            <i class="play icon"></i>
+                            再来一局
+                        </a>
+                        {% if user.uid %}
+                            <a href="/user/{{ user.uid }}" class="ui big secondary button">
+                                <i class="user icon"></i>
+                                我的个人资料
+                            </a>
+                        {% endif %}
+						{% if opponent.uid %}
+							<a href="/user/{{ opponent.uid }}" class="ui big secondary button">
+								<i class="user icon"></i>
+								对手的个人资料
+							</a>
+						{% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // Whereami Duel 系统变量
+        const duelId = '{{ duel.id }}';
+        let currentStatus = '{{ duel.status }}';
+        let currentRound = {{ duel.currentRound }};
+        const totalRounds = {{ duel.totalRounds }};
+        const firstPickAt = {% if duel.firstPickAt %}'{{ duel.firstPickAt }}'{% else %}null{% endif %};
+        const resultsStartAt = {% if duel.resultsStartAt %}'{{ duel.resultsStartAt }}'{% else %}null{% endif %};
+        const gameStartAt = {% if duel.gameStartAt %}'{{ duel.gameStartAt }}'{% else %}null{% endif %};
+        const locations = {{ duel.locations | dump | safe }};
+        const googleMapsApiKey = '{{ googleMapsApiKey }}';
+
+        // 结果数据
+        const resultsData = {
+            actualLocation: {% if duel.actualLocation %}{ lat: {{ duel.actualLocation.lat }}, lng: {{ duel.actualLocation.lng }} }{% else %}null{% endif %},
+            myGuess: {% if duel.myGuessLat and duel.myGuessLng and duel.myGuessLat != -999 %}{ lat: {{ duel.myGuessLat }}, lng: {{ duel.myGuessLng }} }{% else %}null{% endif %},
+            opponentGuess: {% if duel.opponentGuessLat and duel.opponentGuessLng and duel.opponentGuessLat != -999 %}{ lat: {{ duel.opponentGuessLat }}, lng: {{ duel.opponentGuessLng }} }{% else %}null{% endif %}
+        };
+
+        // 状态变量
+        let myGuessSubmitted = {{ (duel.myGuessLat and duel.myGuessLng) or 'false' }};
+        let opponentGuessSubmitted = {{ (duel.opponentGuessLat and duel.opponentGuessLng) or 'false' }};
+        let bothGuessesReceived = myGuessSubmitted && opponentGuessSubmitted;
+
+        // 用户信息
+        const currentUser = {
+            uid: {{ user.uid }},
+            username: '{{ user.username }}'
+        };
+
+        // Google Maps 变量
+        let panorama, streetViewService, guessMap, guessMarker, resultsMap;
+        let isMapVisible = true;
+        let mapsApiLoaded = false;
+
+        // Socket.io 连接管理
+        const socket = io({
+            transports: ['websocket', 'polling'],
+            upgrade: true,
+            rememberUpgrade: true,
+            timeout: 20000,
+            forceNew: false,
+            reconnection: true,
+            reconnectionDelay: 1000,
+            reconnectionAttempts: 5,
+            maxReconnectionAttempts: 10
+        });
+
+        // 网络状态管理
+        let isConnected = false;
+        let reconnectAttempts = 0;
+        let maxReconnectAttempts = 10;
+        let heartbeatInterval = null;
+        let lastHeartbeat = Date.now();
+
+        // 时间同步
+        let serverTimeOffset = 0;
+        let timers = {
+            preparation: null,
+            pickTimeout: null,
+            resultsCountdown: null,
+            heartbeat: null,
+            opponentCheck: null
+        };
+
+        console.log('🎮 Whereami Duel 15秒版本加载');
+        console.log(`📊 Duel: ${duelId} - Status: ${currentStatus}`);
+        console.log(`🎯 Round: ${currentRound}/${totalRounds}`);
+        console.log(`📍 My guess submitted: ${myGuessSubmitted}, Opponent guess submitted: ${opponentGuessSubmitted}`);
+        console.log(`⏰ First pick at: ${firstPickAt}, Results start at: ${resultsStartAt}`);
+
+        // 更新网络状态指示器
+        function updateNetworkStatus(status, text) {
+            const indicator = document.getElementById('network-status');
+            const textElement = document.getElementById('network-text');
+            
+            if (indicator && textElement) {
+                indicator.className = `network-status ${status}`;
+                textElement.textContent = text;
+                
+                // 根据状态更新图标
+                const icon = indicator.querySelector('i');
+                if (icon) {
+                    icon.className = status === 'connected' ? 'wifi icon' : 
+                                   status === 'disconnected' ? 'wifi slash icon' : 
+                                   'refresh icon spin';
+                }
+            }
+        }
+
+        // 修复：更新对手状态，去掉重复图标
+        function updateOpponentStatus(hasGuessed) {
+            const opponentStatus = document.getElementById('opponent-status');
+            const opponentStatusText = document.getElementById('opponent-status-text');
+            
+            if (opponentStatus && opponentStatusText) {
+                if (currentStatus === 'playing' && !myGuessSubmitted) {
+                    opponentStatus.style.display = 'block';
+                    
+                    if (hasGuessed) {
+						opponentStatusText.remove();
+						opponentStatus.remove();
+                    } else {
+                        opponentStatus.className = 'opponent-status';
+                        opponentStatusText.textContent = '{{ opponent.name }} 正在思考...';
+                    }
+                } else {
+                    opponentStatus.style.display = 'none';
+                }
+            }
+        }
+
+        // 添加：地图点击记录函数
+        function recordMapClick(latLng) {
+            if (myGuessSubmitted) {
+                return;
+            }
+            
+            // 记录最后一次点击位置到服务器
+            fetch(`/duel/${duelId}/click`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    clickLat: latLng.lat(),
+                    clickLng: latLng.lng()
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log(`📍 Click recorded: ${latLng.lat()}, ${latLng.lng()}`);
+                } else {
+                    console.error('❌ Failed to record click:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('❌ Click recording error:', error);
+            });
+        }
+
+        // Socket.io 事件处理
+        socket.on('connect', function() {
+            console.log('🔌 Connected to Whereami Duel server');
+            isConnected = true;
+            reconnectAttempts = 0;
+            updateNetworkStatus('connected', 'Connected');
+            
+            // 加入决斗房间时传递用户信息
+            socket.emit('join_duel', { 
+                duelId: duelId,
+                userId: currentUser.uid,
+                username: currentUser.username
+            });
+            
+            // 开始心跳检测
+            startHeartbeat();
+            
+            // 请求当前状态
+            socket.emit('get_duel_status', { duelId: duelId });
+        });
+
+        socket.on('duel_joined', function(data) {
+            console.log('✅ Successfully joined duel room:', data.duelId);
+        });
+
+        socket.on('error', function(data) {
+            console.error('❌ Socket error:', data.message);
+            updateNetworkStatus('disconnected', 'Error: ' + data.message);
+        });
+
+        socket.on('disconnect', function(reason) {
+            console.log('🔌 Disconnected from server:', reason);
+            isConnected = false;
+            updateNetworkStatus('disconnected', 'Disconnected');
+            
+            if (heartbeatInterval) {
+                clearInterval(heartbeatInterval);
+                heartbeatInterval = null;
+            }
+        });
+
+        socket.on('connect_error', function(error) {
+            console.error('❌ Connection error:', error);
+            reconnectAttempts++;
+            updateNetworkStatus('reconnecting', `Reconnecting... (${reconnectAttempts}/${maxReconnectAttempts})`);
+            
+            if (reconnectAttempts >= maxReconnectAttempts) {
+                console.error('❌ Max reconnection attempts reached');
+                updateNetworkStatus('disconnected', 'Connection failed');
+            }
+        });
+
+        socket.on('reconnect', function(attemptNumber) {
+            console.log('🔄 Reconnected after', attemptNumber, 'attempts');
+            isConnected = true;
+            reconnectAttempts = 0;
+            updateNetworkStatus('connected', 'Reconnected');
+            
+            // 重新加入决斗房间
+            socket.emit('join_duel', { 
+                duelId: duelId,
+                userId: currentUser.uid,
+                username: currentUser.username
+            });
+            socket.emit('get_duel_status', { duelId: duelId });
+        });
+
+        // 心跳检测
+        function startHeartbeat() {
+            if (heartbeatInterval) clearInterval(heartbeatInterval);
+            
+            heartbeatInterval = setInterval(() => {
+                if (isConnected) {
+                    socket.emit('heartbeat', { 
+                        duelId: duelId,
+                        timestamp: Date.now() 
+                    });
+                    lastHeartbeat = Date.now();
+                }
+            }, 30000); // 每30秒发送心跳
+        }
+
+        socket.on('heartbeat_response', function(data) {
+            lastHeartbeat = Date.now();
+            console.log('💓 Heartbeat response received');
+        });
+
+        // 决斗状态更新处理
+        socket.on('duel_status_update', function(data) {
+            if (data.duelId !== duelId) return;
+            
+            console.log('📊 Duel status update received:', data);
+            
+            // 更新状态变量（但不立即刷新页面）
+            if (data.status) {
+                currentStatus = data.status;
+            }
+            
+            // 更新猜测状态
+            if (data.player1GuessStatus !== undefined) {
+                const isPlayer1 = data.isPlayer1;
+                const oldOpponentStatus = opponentGuessSubmitted;
+                
+                if (isPlayer1) {
+                    myGuessSubmitted = data.player1GuessStatus;
+                    opponentGuessSubmitted = data.player2GuessStatus;
+                } else {
+                    myGuessSubmitted = data.player2GuessStatus;
+                    opponentGuessSubmitted = data.player1GuessStatus;
+                }
+                
+                bothGuessesReceived = myGuessSubmitted && opponentGuessSubmitted;
+                
+                console.log(`🎯 Guess status updated: My=${myGuessSubmitted}, Opponent=${opponentGuessSubmitted}, Both=${bothGuessesReceived}`);
+                
+                // 更新UI显示
+                updateOpponentStatus(opponentGuessSubmitted);
+                
+                // 修复：双方都选择后立即跳转到结果页面
+                if (bothGuessesReceived && currentStatus === 'playing') {
+                    console.log('🎊 Both players have guessed! Transitioning to results...');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 500); // 短暂延迟确保服务器处理完成
+                    return;
+                }
+                
+                // 如果我已经猜测了，显示等待状态
+                if (myGuessSubmitted && !bothGuessesReceived) {
+                    const waitingStatus = document.getElementById('waiting-status');
+                    if (waitingStatus) {
+                        waitingStatus.style.display = 'block';
+                    }
+                    const gameControls = document.getElementById('game-controls');
+                    if (gameControls) {
+                        gameControls.style.display = 'none';
+                    }
+                }
+            }
+        });
+
+        // 决斗更新事件（谨慎处理刷新）
+        socket.on('duel_updated', function(data) {
+            if (data.duelId !== duelId) return;
+            
+            console.log('🔄 Duel updated:', data);
+            
+            switch(data.action) {
+                case 'game_started':
+                    if (currentStatus === 'preparing') {
+                        console.log('🎮 Game started - refreshing page');
+                        location.reload();
+                    }
+                    break;
+                    
+                case 'first_guess':
+                    console.log('🎯 First guess made - updating status only');
+                    // 不刷新页面，只更新状态，显示计时器
+                    const timerDisplay = document.getElementById('timer-display');
+                    if (timerDisplay && !firstPickAt) {
+                        timerDisplay.style.display = 'block';
+                        startPickTimer();
+                    }
+                    break;
+                    
+                case 'both_guessed':
+                    console.log('📊 Both players guessed - moving to results immediately');
+                    location.reload();
+                    break;
+                    
+                case 'timeout':
+                    console.log('⏰ Round timeout - moving to results');
+                    if (currentStatus === 'playing') {
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1000);
+                    }
+                    break;
+                    
+                case 'next_round':
+                    console.log(`▶️ Next round starting: ${data.round}/${totalRounds}`);
+                    if (currentStatus === 'results') {
+                        location.reload();
+                    }
+                    break;
+                    
+                case 'duel_finished':
+                    console.log('🏁 Duel finished');
+                    if (currentStatus === 'results') {
+                        location.reload();
+                    }
+                    break;
+            }
+        });
+
+        // 定期检查对手状态（防止遗漏更新）
+        function startOpponentStatusCheck() {
+            if (timers.opponentCheck) clearInterval(timers.opponentCheck);
+            
+            if (currentStatus === 'playing' && !bothGuessesReceived) {
+                timers.opponentCheck = setInterval(() => {
+                    if (isConnected) {
+                        socket.emit('get_duel_status', { duelId: duelId });
+                    }
+                }, 5000); // 每5秒检查一次
+            }
+        }
+
+        // 同步服务器时间
+        async function syncServerTime() {
+            try {
+                const response = await fetch('/api/server-time');
+                const data = await response.json();
+                const networkLatency = 50;
+                const serverTime = new Date(data.serverTime).getTime();
+                serverTimeOffset = serverTime + networkLatency - Date.now();
+                console.log('✅ 服务器时间同步完成');
+                return true;
+            } catch (error) {
+                console.error('❌ 服务器时间同步失败:', error);
+                return false;
+            }
+        }
+
+        function getServerTime() {
+            return Date.now() + serverTimeOffset;
+        }
+
+        // 初始化结果地图
+        function initResultsMap() {
+            console.log('🗺️ 初始化结果地图...');
+            
+            if (!resultsData.actualLocation) {
+                console.error('❌ 没有实际位置数据');
+                return;
+            }
+
+            const resultsMapElement = document.getElementById('results-map');
+            if (!resultsMapElement) {
+                console.error('❌ 结果地图元素未找到');
+                return;
+            }
+
+            // 创建地图边界
+            const bounds = new google.maps.LatLngBounds();
+            bounds.extend(resultsData.actualLocation);
+            
+            if (resultsData.myGuess) bounds.extend(resultsData.myGuess);
+            if (resultsData.opponentGuess) bounds.extend(resultsData.opponentGuess);
+
+            // 创建地图
+            resultsMap = new google.maps.Map(resultsMapElement, {
+                center: bounds.getCenter(),
+                zoom: 1,
+                mapTypeControl: true,
+                streetViewControl: false,
+                fullscreenControl: false,
+				// 添加地图边界限制
+				restriction: {
+					latLngBounds: {
+						north: 85,
+						south: -85,
+						west: -180,
+						east: 180
+					},
+					strictBounds: true // 严格限制，不能拖拽到边界外
+				}
+            });
+
+            // 调整地图视图以显示所有标记
+            resultsMap.fitBounds(bounds);
+
+            // 添加实际位置标记（绿色）
+            const actualMarker = new google.maps.Marker({
+                position: resultsData.actualLocation,
+                map: resultsMap,
+                title: 'Correct Answer',
+                icon: {
+                    url: 'http://maps.google.com/mapfiles/ms/icons/green-dot.png',
+                    scaledSize: new google.maps.Size(32, 32)
+                },
+                zIndex: 1000
+            });
+
+            // 添加我的猜测标记（蓝色）
+            if (resultsData.myGuess) {
+                const myGuessMarker = new google.maps.Marker({
+                    position: resultsData.myGuess,
+                    map: resultsMap,
+                    title: '{{ user.username }}\'s Guess',
+                    icon: {
+                        url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png',
+                        scaledSize: new google.maps.Size(32, 32)
+                    },
+                    zIndex: 999
+                });
+
+                // 连线：实际位置到我的猜测
+                new google.maps.Polyline({
+                    path: [resultsData.actualLocation, resultsData.myGuess],
+                    geodesic: false,
+                    strokeColor: '#2185d0',
+                    strokeOpacity: 0.8,
+                    strokeWeight: 3,
+                    map: resultsMap
+                });
+            }
+
+            // 添加对手猜测标记（红色）
+            if (resultsData.opponentGuess) {
+                const opponentGuessMarker = new google.maps.Marker({
+                    position: resultsData.opponentGuess,
+                    map: resultsMap,
+                    title: '{{ opponent.name }}\'s Guess',
+                    icon: {
+                        url: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png',
+                        scaledSize: new google.maps.Size(32, 32)
+                    },
+                    zIndex: 998
+                });
+
+                // 连线：实际位置到对手猜测
+                new google.maps.Polyline({
+                    path: [resultsData.actualLocation, resultsData.opponentGuess],
+                    geodesic: false,
+                    strokeColor: '#db2828',
+                    strokeOpacity: 0.8,
+                    strokeWeight: 3,
+                    map: resultsMap
+                });
+            }
+
+            console.log('✅ 结果地图初始化完成');
+        }
+
+        // 初始化街景地图
+        function initMap() {
+            console.log('🗺️ 初始化街景地图...');
+            
+            if (!locations || locations.length === 0) {
+                console.log('❌ 无位置数据');
+                return;
+            }
+
+            const currentLocation = locations[currentRound - 1];
+            if (!currentLocation) {
+                console.error('❌ 当前轮次无位置数据:', currentRound);
+                return;
+            }
+
+            console.log('🎯 加载街景位置:', currentLocation);
+
+            // 隐藏加载状态
+            const loadingElement = document.getElementById('street-view-loading');
+            if (loadingElement) {
+                loadingElement.style.display = 'none';
+            }
+
+            // 初始化街景服务
+            streetViewService = new google.maps.StreetViewService();
+            const streetViewElement = document.getElementById('street-view');
+            
+            if (!streetViewElement) {
+                console.error('❌ 街景元素未找到');
+                return;
+            }
+
+            // 创建街景全景图
+            panorama = new google.maps.StreetViewPanorama(streetViewElement, {
+                position: { lat: currentLocation.lat, lng: currentLocation.lng },
+                draggable: true,
+                disableDefaultUI: true,
+                showRoadLabels: false,
+                linksControl: false,
+                clickToGo: true,
+                addressControl: false,
+                keyboardShortcuts: false,
+                scrollwheel: true,
+                panControl: true,
+                zoomControl: true
+            });
+
+            // 街景状态监听
+            panorama.addListener('status_changed', function() {
+                const status = panorama.getStatus();
+                console.log('🗺️ 街景状态:', status);
+                
+                if (status === 'OK') {
+                    console.log('✅ 街景加载成功');
+                } else {
+                    console.error('❌ 街景加载失败:', status);
+                    streetViewElement.innerHTML = `
+                        <div style="display: flex; align-items: center; justify-content: center; height: 100%; background: #f44336; color: white;">
+                            <div style="text-align: center;">
+                                <h3>Street View Loading Failed</h3>
+                                <p>Please refresh the page</p>
+                                <button onclick="location.reload()" class="ui button" style="margin-top: 10px;">Retry</button>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            // 初始化猜测地图
+            initGuessMap();
+            
+            console.log('✅ 街景地图初始化完成');
+        }
+
+        // 修改：猜测地图点击处理，增加点击记录
+        function initGuessMap() {
+            console.log('🗺️ 初始化猜测地图...');
+            
+            const guessMapElement = document.getElementById('guess-map');
+            if (!guessMapElement) {
+                console.error('❌ 猜测地图元素未找到');
+                return;
+            }
+
+            guessMap = new google.maps.Map(guessMapElement, {
+                center: { lat: 0, lng: 0 },
+                zoom: 1,
+                streetViewControl: false,
+                mapTypeControl: false,
+                restriction: {
+                    latLngBounds: {
+                        north: 85.05112878,
+                        south: -85.05112878,
+                        west: -180,
+                        east: 180
+                    },
+                    strictBounds: true,
+                }
+            });
+
+            guessMap.addListener('click', (e) => {
+                if (myGuessSubmitted) {
+                    console.log('⚠️ 已经提交猜测，忽略地图点击');
+                    return;
+                }
+                
+                console.log('🎯 地图点击:', e.latLng.lat(), e.latLng.lng());
+                
+                // 记录点击位置到服务器
+                recordMapClick(e.latLng);
+                
+                // 放置标记
+                placeGuessMarker(e.latLng);
+                
+                const guessBtn = document.getElementById('guess-btn');
+                if (guessBtn) {
+                    guessBtn.disabled = false;
+                    guessBtn.style.background = 'rgba(33, 186, 69, 0.9)';
+                }
+            });
+            
+            console.log('✅ 猜测地图初始化完成');
+            // --- 在這裡加入以下三行 ---
+            setupDynamicCompass(); // 建立指南針
+            updateCompass(0);      // 設定初始位置
+            panorama.addListener('pov_changed', () => updateCompass(panorama.getPov().heading)); // 監聽視角變化
+        }
+        function setupDynamicCompass() {
+            const strip = document.getElementById('compass-strip');
+            if (!strip) return;
+
+            // 清空舊內容，以防重複生成
+            strip.innerHTML = '';
+
+            const pixelsPerDegree = 4;
+            const directions = { 0: '北', 45: '东北', 90: '东', 135: '东南', 180: '南', 225: '西南', 270: '西', 315: '西北' };
+            
+            for (let i = -360; i < 720; i++) {
+                const leftPos = (i * pixelsPerDegree) + (360 * pixelsPerDegree);
+
+                // *** 錯誤修正點 ***
+                // 使用 ((i % 360) + 360) % 360 確保結果永遠是正數 (0-359)
+                const key = ((i % 360) + 360) % 360;
+
+                // 檢查 key 是否存在於 directions 物件中
+                if (directions.hasOwnProperty(key)) {
+                    const label = document.createElement('span');
+                    label.className = 'compass-label';
+                    label.textContent = directions[key];
+                    label.style.left = `${leftPos}px`;
+                    label.style.whiteSpace = "nowrap";
+                    // 次要方向字體縮小
+                    if (key % 90 !== 0) {
+                        label.style.fontSize = '0.8rem';
+                    }
+                    strip.appendChild(label);
+
+                } else if (i % 10 === 0) {
+                    // 每 10 度一個次要刻度
+                    const tick = document.createElement('div');
+                    tick.className = 'compass-tick tick-minor';
+                    tick.style.left = `${leftPos}px`;
+                    strip.appendChild(tick);
+                }
+            }
+        }
+        /**
+         * 根據街景的朝向 (heading) 更新指南針的位置
+         * @param {number} heading - 0到360度的角度值
+         */
+        function updateCompass(heading) {
+            const strip = document.getElementById('compass-strip');
+            if (!strip) return;
+
+            const pixelsPerDegree = 4; // 必須和 setupDynamicCompass 中的值一致
+            const offset = (heading * pixelsPerDegree) - (document.getElementById('compass-container').offsetWidth / 2);
+            
+            // 我們移動整個標尺帶來讓正確的方向對準中間的指針
+            strip.style.transform = offset > 0 ? `translateX(-${offset}px)` : `translateX(${-offset}px)`;
+        }
+
+        // 放置猜测标记
+        function placeGuessMarker(latLng) {
+            if (guessMarker) {
+                guessMarker.setPosition(latLng);
+            } else {
+                guessMarker = new google.maps.Marker({
+                    position: latLng,
+                    map: guessMap,
+                    title: 'Your guess',
+                    animation: google.maps.Animation.DROP
+                });
+            }
+            console.log('📍 猜测标记已放置:', latLng.lat(), latLng.lng());
+        }
+
+        // 处理猜测提交
+        function handleGuess() {
+            if (myGuessSubmitted) {
+                console.log('⚠️ 已经提交过猜测');
+                return;
+            }
+            
+            if (!guessMarker) {
+                alert('Please place a marker on the map first!');
+                return;
+            }
+
+            console.log('🎯 提交猜测...');
+            
+            const position = guessMarker.getPosition();
+            const guessLat = position.lat();
+            const guessLng = position.lng();
+
+            const guessBtn = document.getElementById('guess-btn');
+            if (guessBtn) {
+                guessBtn.disabled = true;
+                guessBtn.innerHTML = '<i class="spinner loading icon"></i> Submitting...';
+            }
+            
+            // 立即更新本地状态
+            myGuessSubmitted = true;
+            
+            fetch(`/duel/${duelId}/guess`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    guessLat: guessLat,
+                    guessLng: guessLng
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log(`✅ 猜测成功: ${guessLat}, ${guessLng}`);
+                    
+                    // 隐藏控制按钮，显示等待状态
+                    const gameControls = document.getElementById('game-controls');
+                    if (gameControls) {
+                        gameControls.style.display = 'none';
+                    }
+                    
+                    const waitingStatus = document.getElementById('waiting-status');
+                    if (waitingStatus) {
+                        waitingStatus.style.display = 'block';
+                    }
+                    
+                    // 开始检查对手状态
+                    startOpponentStatusCheck();
+                    
+                } else {
+                    console.error('❌ 猜测失败:', data.error);
+                    // 恢复状态
+                    myGuessSubmitted = false;
+                    if (guessBtn) {
+                        guessBtn.disabled = false;
+                        guessBtn.innerHTML = '<i class="crosshairs icon"></i> Make Guess';
+                    }
+                    alert('Failed to submit guess: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('❌ 猜测错误:', error);
+                // 恢复状态
+                myGuessSubmitted = false;
+                if (guessBtn) {
+                    guessBtn.disabled = false;
+                    guessBtn.innerHTML = '<i class="crosshairs icon"></i> Make Guess';
+                }
+                alert('Network error. Please try again.');
+            });
+        }
+
+        // 准备倒计时
+        function startPreparationCountdown() {
+            if (!gameStartAt) return;
+            
+            const startTime = new Date(gameStartAt).getTime();
+            
+            timers.preparation = setInterval(() => {
+                const serverNow = getServerTime();
+                const remaining = Math.max(0, startTime - serverNow);
+                const seconds = Math.ceil(remaining / 1000);
+                
+                const countdownElement = document.getElementById('prep-countdown');
+                if (countdownElement) {
+                    countdownElement.textContent = seconds;
+                }
+                
+                if (remaining <= 0) {
+                    clearInterval(timers.preparation);
+                    console.log('🎮 游戏开始 - 等待服务器信号');
+                }
+            }, 100);
+        }
+
+        // 修复：游戏计时器 - 15秒倒计时
+        function startPickTimer() {
+            console.log('⏰ 开始游戏计时器（15秒）');
+            
+            // 显示计时器
+            const timerDisplay = document.getElementById('timer-display');
+            if (timerDisplay) {
+                timerDisplay.style.display = 'block';
+            }
+            
+            // 设置计时器开始时间
+            let startTime;
+            if (firstPickAt) {
+                startTime = new Date(firstPickAt).getTime();
+            } else {
+                startTime = Date.now();
+            }
+            
+            const duration = 15000; // 修改：15秒倒计时
+            
+            if (timers.pickTimeout) clearInterval(timers.pickTimeout);
+            
+            timers.pickTimeout = setInterval(() => {
+                const serverNow = getServerTime();
+                const elapsed = serverNow - startTime;
+                const remaining = Math.max(0, duration - elapsed);
+                const seconds = Math.ceil(remaining / 1000);
+                
+                const timerElement = document.getElementById('timer-seconds');
+                if (timerElement) {
+                    timerElement.textContent = seconds;
+                }
+                
+                // 修改：更新计时器显示文字
+                const timerText = document.getElementById('timer-text');
+                if (timerText) {
+                    timerText.innerHTML = `仅剩 <span id="timer-seconds">${seconds}</span>s`;
+                }
+                
+                console.log(`⏰ Timer: ${seconds}s remaining`);
+                
+                if (remaining <= 0) {
+                    clearInterval(timers.pickTimeout);
+                    console.log('⏰ 时间到！');
+                }
+            }, 1000); // 每秒更新一次，更清晰
+        }
+
+        // 修复：结果倒计时 - 确保倒计时正确显示
+        function startResultsCountdown() {
+            if (!resultsStartAt) return;
+            
+            console.log('📊 开始结果倒计时');
+            
+            const startTime = new Date(resultsStartAt).getTime();
+            const duration = 10000; // 10秒
+            
+            if (timers.resultsCountdown) clearInterval(timers.resultsCountdown);
+            
+            timers.resultsCountdown = setInterval(() => {
+                const serverNow = getServerTime();
+                const elapsed = serverNow - startTime;
+                const remaining = Math.max(0, duration - elapsed);
+                const seconds = Math.ceil(remaining / 1000);
+                
+                const countdownElement = document.getElementById('results-countdown');
+                if (countdownElement) {
+                    countdownElement.textContent = seconds;
+                }
+                
+                console.log(`📊 Results countdown: ${seconds}s remaining`);
+                
+                if (remaining <= 0) {
+                    clearInterval(timers.resultsCountdown);
+                    console.log('📊 结果倒计时结束');
+                }
+            }, 100);
+        }
+
+        // Google Maps API 回调
+        window.initGoogleMapsCallback = function() {
+            console.log('✅ Google Maps API 加载完成');
+            mapsApiLoaded = true;
+            
+            setTimeout(() => {
+                if (currentStatus === 'playing') {
+                    initMap();
+                } else if (currentStatus === 'results') {
+                    initResultsMap();
+                }
+            }, 100);
+        };
+
+        // 错误处理
+        window.handleGoogleMapsError = function() {
+            console.error('❌ Google Maps API 加载失败');
+            const targetElement = document.getElementById(currentStatus === 'results' ? 'results-map' : 'street-view');
+            if (targetElement) {
+                targetElement.innerHTML = `
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100%; background: #f44336; color: white;">
+                        <div style="text-align: center;">
+                            <h3>Google Maps API Loading Failed</h3>
+                            <p>Please check your internet connection and refresh the page</p>
+                            <button onclick="location.reload()" class="ui button" style="margin-top: 10px;">Retry</button>
+                        </div>
+                    </div>
+                `;
+            }
+        };
+
+        // 初始化系统
+        async function initializeDuelSystem() {
+            console.log('🚀 初始化 Whereami Duel 15秒版本系统');
+            
+            await syncServerTime();
+            
+            if (currentStatus === 'preparing') {
+                startPreparationCountdown();
+            } else if (currentStatus === 'playing') {
+                // 修复：如果有 firstPickAt，立即开始计时器
+                if (firstPickAt) {
+                    console.log('⏰ 检测到已有 firstPickAt，开始15秒计时器');
+                    startPickTimer();
+                }
+                updateOpponentStatus(opponentGuessSubmitted);
+                startOpponentStatusCheck();
+            } else if (currentStatus === 'results') {
+                startResultsCountdown();
+            }
+            
+            console.log('✅ 15秒版本系统初始化完成');
+        }
+
+        // DOM 加载完成后初始化
+        $(document).ready(function() {
+            console.log('📄 DOM 加载完成 - 初始化15秒版决斗系统');
+            
+            // 地图切换按钮
+            $('#toggle-map-btn').on('click', function() {
+                const mapContainer = document.getElementById('map-container');
+                if (mapContainer) {
+                    isMapVisible = !isMapVisible;
+                    mapContainer.style.display = isMapVisible ? 'block' : 'none';
+                    $(this).html(isMapVisible ? 
+                        '<i class="eye slash icon"></i> 隐藏地图' : 
+                        '<i class="eye icon"></i> 显示地图'
+                    );
+                }
+            });
+
+            // 猜测按钮
+            $('#guess-btn').on('click', handleGuess);
+            
+            // 键盘快捷键
+            $(document).keydown(function(e) {
+                // 空格键提交猜测
+                if (e.code === 'Space') {
+                    const guessBtn = document.getElementById('guess-btn');
+                    if (guessBtn && !guessBtn.disabled && !myGuessSubmitted) {
+                        e.preventDefault();
+                        handleGuess();
+                    }
+                }
+                // M键切换地图
+                if (e.which === 77) {
+                    const toggleBtn = document.getElementById('toggle-map-btn');
+                    if (toggleBtn) {
+                        e.preventDefault();
+                        toggleBtn.click();
+                    }
+                }
+            });
+            
+            initializeDuelSystem();
+        });
+
+        // 加载 Google Maps API
+        if ((currentStatus === 'playing' || currentStatus === 'results') && googleMapsApiKey) {
+            console.log('🗺️ 加载 Google Maps API...');
+            
+            const script = document.createElement('script');
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${googleMapsApiKey}&callback=initGoogleMapsCallback&libraries=geometry&language=zh-CN`;
+            script.async = true;
+            script.defer = true;
+            script.onerror = window.handleGoogleMapsError;
+            document.head.appendChild(script);
+        }
+
+        // 清理计时器
+        window.addEventListener('beforeunload', function() {
+            Object.values(timers).forEach(timer => {
+                if (timer) clearInterval(timer);
+            });
+            
+            if (socket) {
+                socket.disconnect();
+            }
+        });
+
+        console.log('✅ Whereami Duel 15秒版本脚本加载完成');
+    </script>
+</body>
+</html>

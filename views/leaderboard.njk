@@ -1,0 +1,195 @@
+{% extends "layout.njk" %}
+
+{% block content %}
+<div class="ui container">
+    <!-- Header Section -->
+    <div class="ui center aligned segment">
+        <h1 class="ui huge header">
+            <i class="trophy icon"></i>
+            <div class="content">
+                Rating 排行榜
+            </div>
+        </h1>
+        <div class="ui statistics">
+            <div class="statistic">
+                <div class="value">{{ totalPlayers }}</div>
+                <div class="label">总用户数量</div>
+            </div>
+            <div class="statistic">
+                <div class="value">{{ totalPages }}</div>
+                <div class="label">总页数</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Buttons -->
+    <div class="ui center aligned basic segment">
+        <div class="ui large buttons">
+            <a href="/lobby" class="ui green button">
+                <i class="home icon"></i>
+                返回大厅
+            </a>
+            {% if currentUser %}
+            <a href="/user/{{ currentUser.uid }}" class="ui blue button">
+                <i class="user icon"></i>
+                我的个人主页
+            </a>
+            {% endif %}
+            <a href="/lobby" class="ui teal button">
+                <i class="map marker alternate icon"></i>
+                开始决斗
+            </a>
+        </div>
+    </div>
+
+    <!-- Leaderboard Table -->
+    <div class="ui segment">
+        <table class="ui very basic selectable table">
+            <thead>
+                <tr>
+                    <th class="center aligned">排名</th>
+                    <th>用户名</th>
+                    <th class="center aligned">Rating</th>
+                    <th class="center aligned">历史最高 Rating</th>
+                    <th class="center aligned">Rated 对决数</th>
+                    <th class="center aligned">战绩（胜-负-平）</th>
+                    <th class="center aligned">胜率</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for player in players %}
+                <tr {% if player.isCurrentUser %}class="myrating"{% endif %}>
+                    <td class="center aligned">
+                        {% if player.globalRank <= 3 %}
+                            {% if player.globalRank == 1 %}
+                                <span class="ui yellow circular label">1</span>
+                            {% elif player.globalRank == 2 %}
+                                <span class="ui grey circular label">2</span>
+                            {% elif player.globalRank == 3 %}
+                                <span class="ui orange circular label">3</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="ui circular label">{{ player.globalRank }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="ui items">
+                            <div class="item">
+                                <div class="content">
+                                    <a class="header" href="/user/{{ player.uid }}">
+                                        <span class="{{ playersColor[player.uid] }}">{{ player.username }}</span>
+                                    </a>
+                                    {% if player.user_type == 'Plus' %}
+                                        <span class="ui green mini label">{{ player.user_type }}</span>
+                                    {% elif player.user_type == 'Normal' %}
+                                    {% else %}
+                                        <span class="ui orange mini label">{{ player.user_type }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="center aligned">
+                        <span class="{{ playersColor[player.uid] }} boldtext">{{ player.elo_rating }}</span>
+                    </td>
+                    <td class="center aligned">
+                        <span class=" {{ playersColorOfPeak[player.uid] }} boldtext">{{ player.peak_elo }}</span>
+                    </td>
+                    <td class="center aligned">
+                        {{ player.elo_games }}
+                    </td>
+                    <td class="center aligned">
+                        <span class="ui green text">{{ player.total_wins }}</span>-<span class="ui red text">{{ player.total_losses }}</span>-<span class="ui yellow text">{{ player.total_draws }}</span>
+                    </td>
+                    <td class="center aligned">
+                        {% if winPercentage[player.uid] >= 50 %}
+                            <div class="ui green circular label">{{ winPercentage[player.uid] }}%</div>
+                        {% elif winPercentage[player.uid] >= 30 %}
+                            <div class="ui yellow circular label">{{ winPercentage[player.uid] }}%</div>
+                        {% else %}
+                            <div class="ui red circular label">{{ winPercentage[player.uid] }}%</div>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if totalPages > 1 %}
+    <div class="ui center aligned basic segment">
+        <div class="ui pagination menu">
+            {% if hasPrevPage %}
+                <a class="icon item" href="/leaderboard?page={{ prevPage }}">
+                    <i class="left chevron icon"></i>
+                </a>
+            {% else %}
+                <div class="disabled item">
+                    <i class="left chevron icon"></i>
+                </div>
+            {% endif %}
+            
+            {% for pageNum in range(1, totalPages + 1) %}
+                {% if pageNum == currentPage %}
+                    <div class="active item">{{ pageNum }}</div>
+                {% elif pageNum == 1 or pageNum == totalPages or (pageNum >= currentPage - 2 and pageNum <= currentPage + 2) %}
+                    <a class="item" href="/leaderboard?page={{ pageNum }}">{{ pageNum }}</a>
+                {% elif pageNum == currentPage - 3 or pageNum == currentPage + 3 %}
+                    <div class="disabled item">...</div>
+                {% endif %}
+            {% endfor %}
+            
+            {% if hasNextPage %}
+                <a class="icon item" href="/leaderboard?page={{ nextPage }}">
+                    <i class="right chevron icon"></i>
+                </a>
+            {% else %}
+                <div class="disabled item">
+                    <i class="right chevron icon"></i>
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="ui small text">
+            第 {{ currentPage }} 页，共 {{ totalPages }} 页 · 显示 {{ players.length }} 位玩家
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Footer Actions -->
+    <div class="ui center aligned basic segment">
+        <div class="ui large buttons">
+            <a href="/lobby" class="ui primary button">
+                <i class="play icon"></i>
+                开始决斗
+            </a>
+            {% if currentUser %}
+            <a href="/user/{{ currentUser.uid }}" class="ui secondary button">
+                <i class="chart line icon"></i>
+                查看我的个人主页
+            </a>
+            {% else %}
+            <a href="/login" class="ui button">
+                <i class="sign in icon"></i>
+                登录参与决斗
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.ui.items > .item > .content > .header {
+    color: #1e70bf;
+}
+
+.ui.items > .item > .content > .header:hover {
+    color: #1678c2;
+}
+
+.myrating {
+  background-color: lightyellow !important;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title or 'Whereami Duel' }}</title>
+    <link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/semantic-ui@2.5.0/dist/semantic.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://fastly.jsdelivr.net/npm/semantic-ui@2.5.0/dist/semantic.min.js"></script>
+    <script src="https://fastly.jsdelivr.net/npm/sweetalert2@10"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://fastly.jsdelivr.net/npm/chart.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        .rating-container {
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+            padding: 15px;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+            margin-bottom: 20px;
+        }
+
+        .chart-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .time-filter {
+            padding: 8px 16px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .time-filter:hover,
+        .time-filter.active {
+            background: #667eea;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="ui container">
+        {% if user %}
+        <div class="ui top attached menu">
+            <div class="item" onclick="location.href='/';">
+                <i class="map marker alternate icon"></i>
+                <strong>Whereami</strong>
+            </div>
+            <div class="right menu">
+                <div class="item">
+                    <i class="user icon"></i>
+                    <a class="header" href="/user/{{ user.uid }}">
+                        <span class="{{ usernameColor }}">{{ user.username }}</span>
+                        {% if user.anonymous %}
+                            <div class="ui tiny orange label">Guest</div>
+                        {% endif %}
+                    </a>
+                </div>
+                <div class="item">
+                    <form method="POST" action="/logout" style="margin: 0;">
+                        <button type="submit" class="ui mini red button">
+                            <i class="sign out icon"></i>
+                            登出
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="ui {% if user %}attached{% endif %} segment">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+    
+    <script src="/js/app.js"></script>
+</body>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    function styleFirstLetter() {
+        const elements = document.getElementsByClassName('nutella');
+        for (const element of elements) {
+            const text = element.textContent.trim();
+            if (text.length > 0) {
+                const firstLetter = text.charAt(0);
+                const restOfText = text.slice(1);
+                element.innerHTML = `<span class="nutella-first-letter">${firstLetter}</span><span class="nutella-other-letters">${restOfText}</span>`;
+            }
+        }
+    }
+    styleFirstLetter();
+    function styleFirstLetter1() {
+        const elements = document.getElementsByClassName('tourist');
+        for (const element of elements) {
+            const text = element.textContent.trim();
+            if (text.length > 0) {
+                const firstLetter = text.charAt(0);
+                const restOfText = text.slice(1);
+                element.innerHTML = `<span class="tourist-first-letter">${firstLetter}</span><span class="tourist-other-letters">${restOfText}</span>`;
+            }
+        }
+    }
+    styleFirstLetter1();
+});
+</script>
+</html>

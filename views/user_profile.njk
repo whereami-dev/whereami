@@ -1,0 +1,466 @@
+{% extends "layout.njk" %}
+
+{% block content %}
+<div class="ui container">
+    <div class="ui grid">
+        <div class="six wide column">
+            <div class="ui card">
+                <div class="content">
+                    <div class="ui massive circular label" style="margin-bottom: 10px;">
+                        {{ profileUser.username[0] }}
+                    </div>
+                    <div class="header">
+                        <span class="{{ profileUserRatingColor }}">{{ profileUser.username }}</span>
+                        {% if profileUser.user_type != "Normal" %}
+                            <span class="ui red label">
+                                {{ profileUser.user_type }}
+                            </span>
+                        {% endif %}
+                        {% if profileUser.is_anonymous %}
+                        <span class="ui grey label">Anonymous</span>
+                        {% endif %}
+                    </div>
+                    <div class="description" id="bio-section">
+                        <span id="bio-text">
+                            {% if profileUser.profile_bio %}
+                                {{ profileUser.profile_bio }}
+                            {% else %}
+                                <em>这个家伙很不赖，什么都留下了</em>
+                            {% endif %}
+                        </span>
+                        {% if curUsername == profileUser.username %}
+                        <a id="edit-bio-btn" class="ui fluid green small" style="cursor: pointer;">
+                            <i id="edit-icon" class="edit icon"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="content">
+                    <div class="ui two column grid">
+                        <div class="column">
+                            <strong>UID</strong><br>
+                            {{ profileUser.uid }}
+                        </div>
+                        <div class="column">
+                            <strong>注册时间 (UTC+8)</strong><br>
+                            {{ moment(profileUser.registered_at).tz("Asia/Shanghai").format("YYYY-MM-DD HH:mm") }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ten wide column">
+            <div class="ui statistics">
+                <div class="statistic">
+                    <div class="value">{{ profileUser.total_duels }}</div>
+                    <div class="label">总对决数</div>
+                </div>
+                <div class="green statistic">
+                    <div class="value">{{ profileUser.total_wins }}</div>
+                    <div class="label">胜利</div>
+                </div>
+                <div class="red statistic">
+                    <div class="value">{{ profileUser.total_losses }}</div>
+                    <div class="label">失败</div>
+                </div>
+                <div class="yellow statistic">
+                    <div class="value">{{ profileUser.total_draws }}</div>
+                    <div class="label">平局</div>
+                </div>
+                <div class="teal statistic">
+                    <div class="value">{{ winPercentage }}%</div>
+                    <div class="label">胜率</div>
+                </div>
+            </div>
+
+            <div class="ui divider"></div>
+
+            <h3 class="ui header">
+                Rating: <span class="{{ profileUserRatingColor }}">{{ profileUser.elo_rating }}</span> (max. <span class="{{ profileUserPeakRatingColor }}">{{ profileUser.peak_elo }}</span>)
+            </h3>
+
+            <!-- Rating History Chart -->
+            <div class="ui segment">
+                <h4 class="ui header">
+                    <i class="chart line icon"></i>
+                    Rating 历史记录
+                </h4>
+
+                <div class="rating-container">
+                    <!-- Chart Container -->
+                    <div class="chart-wrapper">
+                        <canvas id="ratingChart"></canvas>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div id="chartLoading" class="loading" style="display: none;">
+                        <div class="ui active centered inline loader"></div>
+                        <p>📊 Loading rating history...</p>
+                    </div>
+
+                    <!-- No Data State -->
+                    <div id="noChartData" class="no-data" style="display: none;">
+                        <i class="chart line icon big"></i>
+                        <h4>无可用 Rating 记录</h4>
+                        <p>打几场对决看看你的实力吧！</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ui divider"></div>
+
+            <h3 class="ui header">最近的对决</h3>
+            {% if recentDuels and recentDuels.length > 0 %}
+            <div class="ui segment">
+                <div class="ui relaxed divided list">
+                    {% for duel in recentDuels %}
+                    <div class="item">
+                        {# Determine color based on result for the label #}
+                        {% set result_class = 'grey' %} {# Default for ongoing #}
+                        {% if duel.result == 'win' %}{% set result_class = 'green' %}
+                        {% elif duel.result == 'loss' %}{% set result_class = 'red' %}
+                        {% elif duel.result == 'draw' %}{% set result_class = 'yellow' %}
+                        {% endif %}
+
+                        <div class="right floated content">
+                            <div class="ui {{ result_class }} label">{{ duel.result | capitalize }}</div>
+                        </div>
+                        <i class="large-icon middle aligned map marker alternate icon"></i>
+                        <div class="content">
+                            <a class="header" href="/duel/{{ duel.id }}">
+                                {% if duel.player1_uid == profileUser.uid %}
+                                    <strong>{{ duel.player1_name }}</strong> vs {{ duel.player2_name }}
+                                {% else %}
+                                    {{ duel.player1_name }} vs <strong>{{ duel.player2_name }}</strong>
+                                {% endif %}
+                            </a>
+                            <div class="description">
+                                比分: {{ duel.player1_score }} - {{ duel.player2_score }} · 在 {{ moment(duel.created_at).fromNow() }} 游玩
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="ui center aligned basic segment">
+                 <a href="/user/{{ profileUser.uid }}/duels" class="ui primary button">
+                    <i class="history icon"></i>
+                    查看所有对决
+                </a>
+            </div>
+            {% else %}
+            <div class="ui placeholder segment">
+                <div class="ui icon header">
+                    <i class="map marker alternate icon"></i>
+                    找不到对决
+                </div>
+                <center>这个用户还没有进行任何对决。</center>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if curUsername == profileUser.username %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const editBtn = document.getElementById('edit-bio-btn');
+    const bioSection = document.getElementById('bio-section');
+    const bioTextSpan = document.getElementById('bio-text');
+    const editIcon = document.getElementById('edit-icon');
+
+    let isEditing = false;
+    let originalBio = "{% if profileUser.profile_bio %}{{ profileUser.profile_bio | e }}{% endif %}";
+
+    const saveBio = () => {
+        const bioInput = bioSection.querySelector('input[type="text"]');
+        const newBio = bioInput.value.trim();
+
+        Swal.fire({
+            title: 'Saving...',
+            text: 'Please wait while we update your bio.',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        fetch('/user/edit-bio', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ bio: newBio })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                Swal.fire({
+                    title: 'Success!',
+                    text: 'Your bio has been updated.',
+                    icon: 'success',
+                    timer: 800,
+                    showConfirmButton: false
+                }).then(() => {
+                    window.location.reload();
+                });
+            } else {
+                throw new Error(data.message || 'An unknown error occurred.');
+            }
+        })
+        .catch(error => {
+            Swal.fire({
+                title: 'Error!',
+                text: error.message,
+                icon: 'error'
+            }).then((result) => {
+                location.reload();
+            });
+        });
+    };
+
+    editBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        isEditing = !isEditing;
+
+        if (isEditing) {
+            // Change to input field
+            const currentBio = (originalBio === 'No bio available' || !originalBio) ? '' : originalBio;
+            bioTextSpan.style.display = 'none';
+            const dvv = document.createElement('div');
+            dvv.className = "ui input small";
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = currentBio;
+            input.style.width = 'calc(100% - 45px)'; // Adjust width to not overlap the button
+            dvv.appendChild(input);
+
+            input.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    saveBio();
+                }
+            });
+
+            bioSection.prepend(dvv);
+            input.focus();
+
+            // Change icon to save
+            editIcon.classList.remove('edit');
+            editIcon.classList.add('save');
+        } else {
+            // This case is now handled by the saveBio function
+             saveBio();
+        }
+    });
+});
+</script>
+{% endif %}
+
+<!-- Rating Chart Script -->
+<script>
+// Rating chart functionality
+let ratingChart = null;
+const profileUserId = {{ profileUser.uid }};
+let currentChartData = null;
+
+// Initialize chart when page loads
+$(document).ready(function() {
+    loadRatingHistory('all');
+
+    // Handle filter buttons
+    $('.time-filter').on('click', function() {
+        $('.time-filter').removeClass('active');
+        $(this).addClass('active');
+        const period = $(this).data('period');
+        loadRatingHistory(period);
+    });
+});
+
+async function loadRatingHistory(period = 'all') {
+    console.log(`📊 Loading rating history for period: ${period}`);
+
+    // Show loading state
+    $('#chartLoading').show();
+    $('#noChartData').hide();
+    $('#ratingChart').parent().show();
+
+    try {
+        const response = await fetch(`/api/user/${profileUserId}/rating-history?period=${period}`);
+        const data = await response.json();
+
+        console.log('📈 Rating history data:', data);
+
+        if (!data.success) {
+            throw new Error(data.error || 'Failed to load rating history');
+        }
+
+        currentChartData = data.history;
+
+        if (!currentChartData || currentChartData.length === 0) {
+            // No data available
+            $('#chartLoading').hide();
+            $('#ratingChart').parent().hide();
+            $('#noChartData').show();
+            return;
+        }
+
+        // Render chart
+        renderRatingChart(currentChartData);
+        $('#chartLoading').hide();
+
+    } catch (error) {
+        console.error('❌ Failed to load rating history:', error);
+        $('#chartLoading').hide();
+        $('#ratingChart').parent().hide();
+        $('#noChartData').show();
+        $('#noChartData').html(`
+            <i class="exclamation triangle icon big"></i>
+            <h4>Failed to Load Rating History</h4>
+            <p>Please try refreshing the page.</p>
+        `);
+    }
+}
+
+function renderRatingChart(historyData) {
+    console.log('🎨 Rendering rating chart with', historyData.length, 'data points');
+
+    const ctx = document.getElementById('ratingChart');
+    if (!ctx) {
+        console.error('❌ Rating chart canvas not found');
+        return;
+    }
+
+    // Destroy existing chart
+    if (ratingChart) {
+        ratingChart.destroy();
+    }
+
+    // Prepare data
+    const labels = historyData.map(point => {
+        const date = new Date(point.created_at);
+        return date.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    });
+
+    const ratings = historyData.map(point => point.new_elo);
+    const changes = historyData.map(point => point.elo_change);
+
+    // Calculate min/max for better scaling
+    const minRating = Math.min(...ratings) - 50;
+    const maxRating = Math.max(...ratings) + 50;
+
+    // Color mapping function
+    function getRatingColor(rating) {
+        if (rating < 1250) return '#808080'; // grey
+        else if (rating < 1350) return '#008000'; // green
+        else if (rating < 1450) return '#00c0c0'; // cyan
+        else if (rating < 1550) return '#0000ff'; // blue
+        else if (rating < 1650) return '#c0c000'; // yellow
+        else if (rating < 1750) return '#ff8000'; // orange
+        else if (rating < 1850) return '#ff0000'; // red
+        else return '#ff0000'; // special colors
+    }
+
+    // Create gradient for line
+    const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 400);
+    gradient.addColorStop(0, 'rgba(102, 126, 234, 0.8)');
+    gradient.addColorStop(1, 'rgba(102, 126, 234, 0.1)');
+
+    ratingChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Rating',
+                data: ratings,
+                borderColor: '#667eea',
+                backgroundColor: gradient,
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: ratings.map(rating => getRatingColor(rating)),
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 6,
+                pointHoverRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    min: minRating,
+                    max: maxRating,
+                    grid: {
+                        color: 'rgba(0,0,0,0.1)'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return Math.round(value);
+                        }
+                    }
+                },
+                x: {
+                    grid: {
+                        color: 'rgba(0,0,0,0.1)'
+                    },
+                    ticks: {
+                        maxTicksLimit: 8
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    borderColor: '#667eea',
+                    borderWidth: 1,
+                    callbacks: {
+                        title: function(context) {
+                            const index = context[0].dataIndex;
+                            const gameData = historyData[index];
+                            return gameData.opponent_name === "Starting Rating" ? "初始 Rating" : `与 ${gameData.opponent_name || 'Unknown'} 的对决`;
+                        },
+                        label: function(context) {
+                            const index = context.dataIndex;
+                            const gameData = historyData[index];
+                            const change = gameData.elo_change;
+                            const result = gameData.result;
+                            const changeText = change >= 0 ? `+${change}` : `${change}`;
+                            return [
+                                `Rating: ${context.parsed.y}`,
+                                `Δ: ${changeText}`,
+                                `结果: ${result.charAt(0).toUpperCase() + result.slice(1)}`
+                            ];
+                        }
+                    }
+                }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            animation: {
+                duration: 1000,
+                easing: 'easeInOutQuart'
+            }
+        }
+    });
+
+    console.log('✅ Rating chart rendered successfully');
+}
+</script>
+{% endblock %}

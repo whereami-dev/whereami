@@ -1,0 +1,122 @@
+{% extends "layout.njk" %}
+
+{% block content %}
+<div class="ui container">
+    <div class="ui breadcrumb">
+        <a class="section" href="/user/{{ profileUser.uid }}">{{ profileUser.username }}</a>
+        <i class="right angle icon divider"></i>
+        <div class="active section">Duel History</div>
+    </div>
+
+    <div class="ui divider"></div>
+
+    <h2 class="ui header">
+        <div><i class="history icon"></i>{{ profileUser.username }}'s Duel History</div>
+        <div class="sub header">{{ totalDuels }} total duels completed</div>
+    </h2>
+
+    {% if duels and duels.length > 0 %}
+    <div class="ui relaxed divided list">
+        {% for duel in duels %}
+        <div class="item">
+            {% set result_class = 'grey' %}
+            {% if duel.result == 'win' %}{% set result_class = 'green' %}
+            {% elif duel.result == 'loss' %}{% set result_class = 'red' %}
+            {% elif duel.result == 'draw' %}{% set result_class = 'yellow' %}
+            {% endif %}
+
+            <div class="right floated content">
+                <div class="ui {{ result_class }} label">{{ duel.result | capitalize }}</div>
+                <div class="ui small label">
+                    {{ moment(duel.finished_at).format("MMM DD, YYYY") }}
+                </div>
+            </div>
+
+            <i class="large map marker alternate icon"></i>
+            <div class="content">
+                <a class="header" href="/duel/{{ duel.id }}">
+                    {% if duel.player1_uid == profileUser.uid %}
+                        <strong>{{ duel.player1_name }}</strong> vs {{ duel.player2_name }}
+                    {% else %}
+                        {{ duel.player1_name }} vs <strong>{{ duel.player2_name }}</strong>
+                    {% endif %}
+                </a>
+                <div class="description">
+                    <div class="ui small labels">
+                        <div class="ui label">
+                            Score: {{ duel.player1_score }} - {{ duel.player2_score }}
+                        </div>
+                        <div class="ui label">
+                            Duration: {{ duel.total_rounds }} rounds
+                        </div>
+                        {% if duel.elo_change_player1 != 0 or duel.elo_change_player2 != 0 %}
+                        <div class="ui {% if (duel.player1_uid == profileUser.uid and duel.elo_change_player1 > 0) or (duel.player2_uid == profileUser.uid and duel.elo_change_player2 > 0) %}green{% elif (duel.player1_uid == profileUser.uid and duel.elo_change_player1 < 0) or (duel.player2_uid == profileUser.uid and duel.elo_change_player2 < 0) %}red{% else %}grey{% endif %} label">
+                            ELO: {% if duel.player1_uid == profileUser.uid %}{{ duel.elo_change_player1 >= 0 and '+' or '' }}{{ duel.elo_change_player1 }}{% else %}{{ duel.elo_change_player2 >= 0 and '+' or '' }}{{ duel.elo_change_player2 }}{% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if totalPages > 1 %}
+    <div class="ui center aligned basic segment">
+        <div class="ui pagination menu">
+            {% if hasPrevPage %}
+                <a class="icon item" href="/user/{{ profileUser.uid }}/duels?page={{ prevPage }}">
+                    <i class="left chevron icon"></i>
+                </a>
+            {% else %}
+                <div class="disabled item">
+                    <i class="left chevron icon"></i>
+                </div>
+            {% endif %}
+
+            {% for pageNum in range(1, totalPages + 1) %}
+                {% if pageNum == currentPage %}
+                    <div class="active item">{{ pageNum }}</div>
+                {% elif pageNum == 1 or pageNum == totalPages or (pageNum >= currentPage - 2 and pageNum <= currentPage + 2) %}
+                    <a class="item" href="/user/{{ profileUser.uid }}/duels?page={{ pageNum }}">{{ pageNum }}</a>
+                {% elif pageNum == currentPage - 3 or pageNum == currentPage + 3 %}
+                    <div class="disabled item">...</div>
+                {% endif %}
+            {% endfor %}
+
+            {% if hasNextPage %}
+                <a class="icon item" href="/user/{{ profileUser.uid }}/duels?page={{ nextPage }}">
+                    <i class="right chevron icon"></i>
+                </a>
+            {% else %}
+                <div class="disabled item">
+                    <i class="right chevron icon"></i>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="ui small text">
+            第 {{ currentPage }} 页，共 {{ totalPages }} 页 · 显示 {{ duels.length }} 个决斗
+        </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="ui placeholder segment">
+        <div class="ui icon header">
+            <i class="map marker alternate icon"></i>
+            No Duels Found
+        </div>
+        <p>{{ profileUser.username }} hasn't completed any duels yet.</p>
+    </div>
+    {% endif %}
+
+    <div class="ui center aligned basic segment">
+        <a href="/user/{{ profileUser.uid }}" class="ui button">
+            <i class="arrow left icon"></i>
+            Back to Profile
+        </a>
+    </div>
+</div>
+{% endblock %}
