@@ -114,4 +114,4 @@ If you have a suggestion that would make this better, please fork the repo and c
 
 ## License
 
-Distributed under the GNU Public License 3.0. See `LICENSE` file for more information.
+Distributed under the GNU General Public License v3.0. See `LICENSE` file for more information.
