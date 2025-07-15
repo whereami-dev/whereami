@@ -206,7 +206,7 @@ async function generateValidStreetViewLocation() {
       // 2. 使用 Street View Metadata API 验证位置有效性
       let streetViewUrl = `https://maps.googleapis.com/maps/api/streetview/metadata?location=${lat},${lng}&radius=50000&key=${process.env.GOOGLE_MAPS_API_KEY}`;
       
-      if (Math.random() < 0.75) {
+      if (Math.random() < 0.75) { // 75% probability for outdoor street views
         streetViewUrl = `https://maps.googleapis.com/maps/api/streetview/metadata?location=${lat},${lng}&radius=50000&source=outdoor&key=${process.env.GOOGLE_MAPS_API_KEY}`;
       }
 
@@ -217,11 +217,10 @@ async function generateValidStreetViewLocation() {
         continue; // 跳过当前循环的剩余部分
       }
       const location = svResponse.data.location;
-
-      // 2. 使用 Street View Metadata API 验证位置有效性
       const streetViewUrl2 = `https://maps.googleapis.com/maps/api/streetview/metadata?location=${location.lat},${location.lng}&radius=1&key=${process.env.GOOGLE_MAPS_API_KEY}`;
       const svResponse2 = await axios.get(streetViewUrl2);
       if (svResponse2.data.status !== 'OK') {
+        // Use fallback location
         return {
           lat: 39.0194608,
           lng: 125.75355107
@@ -254,7 +253,7 @@ async function generateValidStreetViewLocation() {
 
       console.log(`🌍 Country identified as: ${countryCode}`);
 
-      // 4. 【新增】根据国家代码执行重选逻辑
+      // 4. 【新增】根据国家代码执行重选逻辑以维持生成地区平衡
       const randomChance = Math.random(); // 生成一个 0 到 1 之间的随机数
       let shouldReselect = false;
 
