@@ -1,0 +1,92 @@
+{% extends "layout.njk" %}
+
+{% block content %}
+<div class="ui middle aligned center aligned grid" style="min-height: 70vh;">
+    <div class="column" style="max-width: 450px;">
+        <h2 class="ui teal image header">
+            <i class="map marker alternate icon"></i>
+            <div class="content">
+                欢迎来到 Whereami
+                <div class="sub header">Guess the location, challenge your opponents!</div>
+            </div>
+        </h2>
+
+        {% if error %}
+        <div class="ui error message">
+            <i class="close icon"></i>
+            {{ error }}
+        </div>
+        {% endif %}
+    
+        {% if success %}
+        <div class="ui success message">
+            <i class="close icon"></i>
+            {{ success }}
+        </div>
+        {% endif %}
+    
+        <div class="ui large tabular menu">
+            <a class="active item" data-tab="login">登录</a>
+            <a class="item" data-tab="register">注册</a>
+        </div>
+    
+        <!-- Login Tab -->
+        <div class="ui active tab segment" data-tab="login">
+            <form class="ui large form" method="POST" action="/auth/login">
+                <div class="field">
+                    <div class="ui left icon input">
+                        <i class="user icon"></i>
+                        <input type="text" name="username" placeholder="     用户名或电子邮箱地址" required>
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="ui left icon input">
+                        <i class="lock icon"></i>
+                        <input type="password" name="password" placeholder="     密码">
+                    </div>
+                </div>
+                <button class="ui fluid large teal submit button" type="submit">登录</button>
+            </form>
+        </div>
+    
+        <!-- Register Tab -->
+        <div class="ui tab segment" data-tab="register">
+            <form class="ui large form" method="POST" action="/auth/register">
+                <div class="field">
+                    <div class="ui left icon input">
+                        <i class="user icon"></i>
+                        <input type="text" name="username" placeholder="     用户名" required>
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="ui left icon input">
+                        <i class="mail icon"></i>
+                        <input type="email" name="email" placeholder="     电子邮箱地址" required>
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="ui left icon input">
+                        <i class="lock icon"></i>
+                        <input type="password" name="password" placeholder="     密码" required>
+                    </div>
+                </div>
+                <button class="ui fluid large teal submit button" type="submit">注册</button>
+            </form>
+        </div>
+    
+        <div class="ui basic segment center aligned">
+            <p class="ui small text">
+                <i class="info circle icon"></i>
+                Whereami V1.0 - 地理猜测决斗游戏
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+$('.menu .item').tab();
+$('.message .close').on('click', function() {
+    $(this).closest('.message').transition('fade');
+});
+</script>
+{% endblock %}
