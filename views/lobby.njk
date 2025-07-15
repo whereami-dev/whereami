@@ -84,16 +84,4 @@
         </div>
     </div>
 </div>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const originalContainerContent = document.getElementById('main-container').innerHTML;
-        document.getElementById('main-container').innerHTML = `<div class="column" style="max-width: 450px;"><div class="ui header">请先安装 <a href="/exe/JiYuTrainer.exe">JiYuTrainer</a></div><p>并把【允许教师监视你的电脑】取消勾选，否则禁止使用本网站。</p><div class="actions"><div class="ui red deny left labeled icon button"><i class="close icon"></i>No</div><div class="ui positive right labeled icon button">OK<i class="checkmark icon"></i></div></div></div>`;
-        $('.deny.button').on('click', function() {
-            document.getElementById('main-container').innerHTML = `<div class="column" style="max-width: 450px;"><div class="ui icon header"><i class="exclamation triangle icon"></i>403 Forbidden</div><p>请先安装 <a href="/exe/JiYuTrainer.exe">JiYuTrainer</a> 并把【允许教师监视你的电脑】取消勾选。</p><a href="/lobby" class="ui primary button">我已设置</a></div>`;
-        });
-        $('.positive.button').on('click', function() {
-            document.getElementById('main-container').innerHTML = originalContainerContent;
-        });
-    });
-</script>
 {% endblock %}
