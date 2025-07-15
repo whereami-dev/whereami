@@ -1,0 +1,536 @@
+/* Whereami Duel Custom Styles */
+body, html {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: 'Lato', sans-serif;
+    background: linear-gradient(135deg, #efefef, #efefef);
+}
+
+.ui.container {
+    margin-top: 2em;
+    margin-bottom: 2em;
+}
+
+/* Whereami Duel Specific Styles */
+.duel-header {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    margin-bottom: 1em;
+}
+
+/* Street View Container for Duel (Not Full Screen) */
+.geoguessr-container {
+    position: relative;
+    height: 60vh;
+    width: 100%;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+}
+
+.street-view-duel {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+/* Map Toggle Button */
+.map-toggle-btn {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    z-index: 10;
+    padding: 12px 24px;
+    font-size: 16px;
+    cursor: pointer;
+    border: none;
+    background-color: rgba(33, 150, 243, 0.9);
+    color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.map-toggle-btn:hover {
+    background-color: rgba(25, 118, 210, 1);
+    transform: scale(1.05);
+}
+
+/* Map Wrapper */
+.map-wrapper {
+    position: absolute;
+    bottom: 80px;
+    right: 20px;
+    z-index: 15;
+    width: 350px;
+    height: 250px;
+    display: flex;
+    flex-direction: column;
+    background-color: #fff;
+    border: 3px solid white;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+    transition: all 0.3s ease;
+}
+
+.map-wrapper.hidden {
+    display: none;
+}
+
+/* Close Map Button */
+.close-map-btn {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    z-index: 20;
+    width: 30px;
+    height: 30px;
+    background-color: #f44336;
+    color: white;
+    border: 2px solid white;
+    border-radius: 50%;
+    font-size: 18px;
+    line-height: 26px;
+    text-align: center;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.close-map-btn:hover {
+    background-color: #d32f2f;
+}
+
+/* Guess Map Container */
+#guess-map-container {
+    flex-grow: 1;
+    border-radius: 8px 8px 0 0;
+    overflow: hidden;
+}
+
+#guess-map {
+    width: 100%;
+    height: 100%;
+}
+
+/* Guess Button */
+.guess-btn {
+    padding: 12px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    border: none;
+    background-color: rgba(76, 175, 80, 0.95);
+    color: white;
+    transition: background-color 0.3s, opacity 0.3s;
+    border-radius: 0 0 8px 8px;
+}
+
+.guess-btn:hover:not(:disabled) {
+    background-color: rgba(69, 160, 73, 1);
+}
+
+.guess-btn:disabled {
+    background-color: rgba(158, 158, 158, 0.8);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* Timer Overlay */
+.timer-overlay {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 12;
+    width: 300px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+/* Cards and segments */
+.ui.segment {
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(10px);
+    /*border-radius: 15px !important;*/
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1) !important;
+}
+
+.ui.card {
+    background: rgba(255, 255, 255, 0.9) !important;
+    backdrop-filter: blur(5px);
+    border-radius: 10px !important;
+}
+
+/* Authentication page */
+.ui.large.form .field > .ui.input input {
+    padding: 1em !important;
+    font-size: 1.1em !important;
+}
+
+/* Progress bars */
+.ui.progress {
+    margin: 1em 0;
+}
+
+.ui.progress .bar {
+    transition: width 0.1s ease;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .geoguessr-container {
+        height: 50vh;
+    }
+    
+    .map-wrapper {
+        width: 280px;
+        height: 200px;
+        bottom: 60px;
+        right: 10px;
+    }
+    
+    .map-toggle-btn {
+        bottom: 10px;
+        right: 10px;
+        padding: 8px 16px;
+        font-size: 14px;
+    }
+    
+    .ui.container {
+        margin-top: 1em;
+    }
+}
+
+/* Animation for loading states */
+.ui.loading.button {
+    pointer-events: none;
+}
+
+/* Custom colors for rating system */
+.ui.teal.button {
+    background-color: #00b5ad !important;
+}
+
+.ui.teal.button:hover {
+    background-color: #009c95 !important;
+}
+
+/* Rating color classes */
+.nutella-first-letter {
+    color: black;
+}
+.nutella-other-letters {
+    color: #ff0000;
+}
+.tourist-first-letter {
+    color: #ff0000;
+}
+.tourist-other-letters {
+    color: black;
+}
+.grey-rating {
+    color: #808080;
+}
+.brown-rating {
+    color: #804000;
+}
+.green-rating {
+    color: #008000;
+}
+.cyan-rating {
+    color: #00c0c0;
+}
+.blue-rating {
+    color: #0000ff;
+}
+.yellow-rating {
+    color: #c0c000;
+}
+.orange-rating {
+    color: #ff8000;
+}
+.red-rating {
+    color: #ff0000;
+}
+.rainbow {
+    background: linear-gradient(135deg,
+        #ff0000,
+        #ff0000,
+        #ffD700,
+        #ff0000,
+        #ff0000
+    );
+    background-size: 500% 500%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: gradient-flow 5s ease-in-out infinite;
+}
+@keyframes gradient-flow {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+.boldtext {
+    font-weight: bold;
+}
+
+/* Leaderboard specific styles */
+.myrating {
+    background-color: lightyellow !important;
+}
+
+.ui.items > .item > .content > .header {
+    color: #1e70bf;
+}
+
+.ui.items > .item > .content > .header:hover {
+    color: #1678c2;
+}
+
+/* Chart styles */
+.rating-container {
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    padding: 15px;
+}
+
+.chart-wrapper {
+    position: relative;
+    height: 400px;
+    margin-bottom: 20px;
+}
+
+.chart-controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.time-filter {
+    padding: 8px 16px;
+    border: 2px solid #667eea;
+    background: white;
+    color: #667eea;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.time-filter:hover,
+.time-filter.active {
+    background: #667eea;
+    color: white;
+}
+
+/* Special animations and effects */
+.celebration {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2em;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+/* Google Maps customizations */
+.gm-style {
+    font-family: 'Lato', sans-serif !important;
+}
+
+.gm-style .gm-style-iw {
+    border-radius: 8px !important;
+}
+
+/* Enhanced button styles */
+.ui.button {
+    transition: all 0.3s ease !important;
+}
+
+.ui.button:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2) !important;
+}
+
+/* Loading states */
+.loading {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+}
+
+.no-data {
+    text-align: center;
+    padding: 20px;
+    color: #999;
+}
+
+/* Error handling */
+.ui.error.message {
+    border-left: 4px solid #db2828 !important;
+}
+
+.ui.success.message {
+    border-left: 4px solid #21ba45 !important;
+}
+
+.ui.warning.message {
+    border-left: 4px solid #f2711c !important;
+}
+
+/* Mobile-first responsive adjustments */
+@media (max-width: 480px) {
+    .geoguessr-container {
+        height: 40vh;
+    }
+    
+    .map-wrapper {
+        width: calc(100vw - 40px);
+        height: 180px;
+        bottom: 50px;
+        right: 20px;
+        left: 20px;
+    }
+    
+    .ui.statistics {
+        flex-direction: column !important;
+    }
+    
+    .ui.statistics .statistic {
+        margin-bottom: 1em !important;
+    }
+}
+
+/* Dark mode support (optional) */
+@media (prefers-color-scheme: dark) {
+    body {
+        background: linear-gradient(135deg, #2c3e50, #34495e);
+        color: #ecf0f1;
+    }
+    
+    .ui.segment {
+        background: rgba(52, 73, 94, 0.95) !important;
+        color: #ecf0f1 !important;
+    }
+    
+    .ui.card {
+        background: rgba(44, 62, 80, 0.9) !important;
+        color: #ecf0f1 !important;
+    }
+}
+
+/* Accessibility improvements */
+.ui.button:focus,
+.ui.input input:focus {
+    outline: 2px solid #2185d0 !important;
+    outline-offset: 2px !important;
+}
+
+/* Print styles */
+@media print {
+    .ui.menu,
+    .ui.button,
+    .map-toggle-btn,
+    .map-wrapper {
+        display: none !important;
+    }
+}
+
+/* 在 style.css 中添加/修改以下样式 */
+
+/* Street View Container for Duel (Not Full Screen) */
+.geoguessr-container {
+    position: relative;
+    height: 60vh;
+    width: 100%;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    background: #f5f5f5; /* 添加背景色以便看到容器 */
+}
+
+.street-view-duel {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background: #e0e0e0; /* 添加背景色 */
+}
+
+/* 确保 Google Maps 容器正确显示 */
+#street-view {
+    width: 100% !important;
+    height: 100% !important;
+    position: relative !important;
+    display: block !important;
+}
+
+/* Google Street View 样式修复 */
+#street-view .gm-style {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+#street-view .gm-style > div {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* 猜测地图样式 */
+#guess-map {
+    width: 100% !important;
+    height: 100% !important;
+    display: block !important;
+}
+
+/* 加载状态样式 */
+.street-view-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    background: linear-gradient(45deg, #f5f5f5, #e0e0e0);
+    color: #666;
+    text-align: center;
+}
+
+.street-view-error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    background: #f44336;
+    color: white;
+    text-align: center;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .geoguessr-container {
+        height: 50vh;
+    }
+}
+
+@media (max-width: 480px) {
+    .geoguessr-container {
+        height: 40vh;
+        border-radius: 8px;
+    }
+}
