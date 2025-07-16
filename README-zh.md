@@ -83,7 +83,7 @@ DB_NAME=whereami
 SESSION_SECRET=一个非常强的会话密钥
 
 # Google Maps API 密钥
-Maps_API_KEY=你的_Maps_API_密钥
+GOOGLE_MAPS_API_KEY=你的_Maps_API_密钥
 ```
 
 **重要提示**: 你需要一个启用了 **Street View Static API (街景静态API)**, **Geocoding API (地理编码API)** 和 **Maps JavaScript API (地图 JavaScript API)** 的 Google Maps API 密钥。
