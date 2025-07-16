@@ -14,6 +14,10 @@
 
 ### [即将建立社区]()
 
+## 支持
+
+请在 <https://sponsor.murasame-chan.me/> 支持我们的开发。
+
 ## 核心功能
 
 Whereami 专为竞技设计，包含以下核心功能：
