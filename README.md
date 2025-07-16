@@ -10,7 +10,7 @@
 
 This project is built with Node.js, Express, and Socket.IO to create a fast-paced, real-time dueling experience.
 
-### [We will deploy a demo soon]()
+### [Play it online](https://www.akioi.me/)
 
 ### [We will create a community soon]()
 
