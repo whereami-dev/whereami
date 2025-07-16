@@ -1,5 +1,7 @@
 # Whereami
 
+[简体中文](/whereami-dev/whereami/blob/main/README-zh.md) | English
+
 **Test your geographic knowledge in a real-time, competitive, multiplayer duel!**
 
 **Whereami** is a free and open-source geography guessing game inspired by GeoGuessr. Dive into a random location on Google Street View and challenge your friends or other players online to a battle of wits. Pinpoint your location on the map, and may the most accurate explorer win!
