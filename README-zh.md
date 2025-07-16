@@ -1,6 +1,6 @@
 # Whereami
 
-简体中文 | [English](/whereami-dev/whereami/blob/main/README.md)
+简体中文 | [English](/README.md)
 
 ---
 
