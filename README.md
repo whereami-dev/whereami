@@ -14,6 +14,10 @@ This project is built with Node.js, Express, and Socket.IO to create a fast-pace
 
 ### [We will create a community soon]()
 
+## Support
+
+Support us on https://sponsor.murasame-chan.me/.
+
 ## Core Features
 
 Whereami Duel is packed with features designed for competitive play:
