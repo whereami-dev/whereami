@@ -83,7 +83,7 @@ DB_NAME=whereami
 SESSION_SECRET=a_very_strong_secret_key_for_sessions
 
 # Google Maps API Key
-Maps_API_KEY=your_Maps_api_key_here
+GOOGLE_MAPS_API_KEY=your_Maps_api_key_here
 ```
 
 **Important**: You need a Google Maps API key with the Street View Static API, Geocoding API, and Maps JavaScript API enabled.
