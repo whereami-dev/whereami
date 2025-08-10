@@ -10,7 +10,9 @@
 
 本项目基于 Node.js, Express 和 Socket.IO 构建，旨在创造快节奏的实时对战体验。
 
-### [在线玩](https://www.akioi.me/)
+## 在线玩
+
+[简体中文](https://cn.akioi.me) | [English (sometimes unstable)](https://www.akioi.me)
 
 ### [即将建立社区]()
 
