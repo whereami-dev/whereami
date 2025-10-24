@@ -12,7 +12,7 @@
 
 ## 在线玩
 
-[简体中文](https://cn.akioi.me) | [English (sometimes unstable)](https://www.akioi.me)
+[简体中文](https://cn.akioi.me)（暂不可用） | [English](https://www.akioi.me)
 
 ### [即将建立社区]()
 
