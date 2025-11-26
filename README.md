@@ -110,6 +110,33 @@ npm start
 
 Open <http://localhost:8888> (or your specified port) in your browser to start playing!
 
+## Project Structure
+
+The codebase has been refactored into a modular structure for better maintainability:
+
+```
+whereami/
+├── server.js                    # Main entry point (153 lines)
+├── src/
+│   ├── db.js                    # Database connection management
+│   ├── utils.js                 # Utility functions (distance, score calculations)
+│   ├── middleware.js            # Express middleware & template config
+│   ├── elo.js                   # ELO rating system
+│   ├── location.js              # Street view location generation
+│   ├── matchmaking.js           # Player matching logic
+│   ├── socket.js                # Socket.IO real-time communication
+│   ├── background.js            # Background tasks & game state management
+│   └── routes/
+│       ├── auth.js              # Authentication routes
+│       ├── matchmaking.js       # Matchmaking routes
+│       └── api.js               # Game API routes
+├── views/                       # Nunjucks templates
+├── public/                      # Static assets (CSS, JS)
+└── plugin/                      # Database setup scripts
+```
+
+See [REFACTORING_SUMMARY.md](REFACTORING_SUMMARY.md) for details on the refactoring effort.
+
 ## Contributing
 
 Contributions make the open-source community an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
