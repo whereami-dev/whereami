@@ -1,5 +1,14 @@
 /**
  * ELO Rating System for competitive matchmaking
+ * 
+ * This implementation uses the standard ELO rating algorithm:
+ * - Expected Score = 1 / (1 + 10^((opponentRating - playerRating) / eloDivisor))
+ * - New Rating = Old Rating + K-factor * (Actual Score - Expected Score)
+ * 
+ * Where:
+ * - K-factor (default: 64): Controls the maximum rating change per game
+ * - ELO Divisor (default: 400): Standard divisor for expected score calculation
+ * - Actual Score: 1.0 for win, 0.5 for draw, 0.0 for loss
  */
 class EloRatingSystem {
   /**

@@ -1,5 +1,11 @@
 const axios = require('axios');
 
+// Fallback location: Pyongyang, North Korea
+const FALLBACK_LOCATION = {
+  lat: 39.0194608,
+  lng: 125.75355107
+};
+
 /**
  * Generate a valid Street View location with country balancing
  * @returns {Promise<{lat: number, lng: number}>} Valid location coordinates
@@ -39,10 +45,7 @@ async function generateValidStreetViewLocation() {
       const svResponse2 = await axios.get(streetViewUrl2);
       if (svResponse2.data.status !== 'OK') {
         // Use fallback location
-        return {
-          lat: 39.0194608,
-          lng: 125.75355107
-        };
+        return FALLBACK_LOCATION;
       }
       
       console.log(`✅ Valid street view panorama found at: ${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}`);
@@ -107,10 +110,7 @@ async function generateValidStreetViewLocation() {
 
   // If max attempts reached, return fallback location
   console.log('⚠️ Reached max attempts. Using fallback location: Pyongyang, North Korea.');
-  return {
-    lat: 39.0194608,
-    lng: 125.75355107
-  };
+  return FALLBACK_LOCATION;
 }
 
 module.exports = {

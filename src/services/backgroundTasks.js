@@ -2,6 +2,10 @@ const { calculateDistance, calculateScore } = require('../utils/helpers');
 const { updateEloRatings } = require('./eloRating');
 const { broadcastDuelUpdate } = require('../socket/handlers');
 
+// Configuration constants
+const ROUND_TIMEOUT_SECONDS = 15; // Timeout for each round in seconds
+const RESULTS_DISPLAY_SECONDS = 10; // Time to display results before next round
+
 /**
  * Start background tasks for managing duel states
  * @param {Server} io - Socket.io server instance
@@ -29,9 +33,10 @@ function startBackgroundTasks(io, pool) {
         broadcastDuelUpdate(io, duel.id, 'game_started');
       }
       
-      // Handle timeouts (15 seconds per round)
+      // Handle timeouts (configured timeout per round)
       const [timeoutRows] = await connection.execute(
-        'SELECT * FROM duels WHERE status = "playing" AND first_pick_at IS NOT NULL AND first_pick_at < DATE_SUB(NOW(), INTERVAL 15 SECOND) AND (player1_guess_lat IS NULL OR player2_guess_lat IS NULL)'
+        'SELECT * FROM duels WHERE status = "playing" AND first_pick_at IS NOT NULL AND first_pick_at < DATE_SUB(NOW(), INTERVAL ? SECOND) AND (player1_guess_lat IS NULL OR player2_guess_lat IS NULL)',
+        [ROUND_TIMEOUT_SECONDS]
       );
       
       for (const duel of timeoutRows) {
@@ -61,7 +66,8 @@ function startBackgroundTasks(io, pool) {
       
       // Auto-progress from results
       const [resultRows] = await connection.execute(
-        'SELECT * FROM duels WHERE status = "results" AND results_start_at < DATE_SUB(NOW(), INTERVAL 10 SECOND)'
+        'SELECT * FROM duels WHERE status = "results" AND results_start_at < DATE_SUB(NOW(), INTERVAL ? SECOND)',
+        [RESULTS_DISPLAY_SECONDS]
       );
       
       
