@@ -1,1 +1,16 @@
+# Backup files
 *.backup
+
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+
+# Logs
+*.log
+register-log.txt
+
+# OS files
+.DS_Store
+Thumbs.db
