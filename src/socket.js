@@ -15,13 +15,13 @@ function broadcastDuelUpdate(io, duelId, action, additionalData = {}) {
 
 // Broadcast duel status to a specific duel room
 async function broadcastDuelStatus(io, pool, duelId) {
+  let connection;
   try {
-    const connection = await pool.getConnection();
+    connection = await pool.getConnection();
     const [rows] = await connection.execute(
       'SELECT * FROM duels WHERE id = ?',
       [duelId]
     );
-    connection.release();
     
     if (rows.length > 0) {
       const duel = rows[0];
@@ -48,6 +48,8 @@ async function broadcastDuelStatus(io, pool, duelId) {
     }
   } catch (error) {
     console.error('❌ Broadcast duel status error:', error);
+  } finally {
+    if (connection) connection.release();
   }
 }
 

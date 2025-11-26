@@ -45,17 +45,19 @@ function getColorByRating(str_rating) {
 // Helper function to get user color
 async function getUserColor(uid, pool) {
   if (!uid) return null;
+  let connection;
   try {
-    const connection = await pool.getConnection();
+    connection = await pool.getConnection();
     const [rows] = await connection.execute(
       'SELECT elo_rating FROM users WHERE uid = ?',
       [uid]
     );
-    connection.release();
     return rows.length > 0 ? getColorByRating(rows[0].elo_rating) : null;
   } catch (error) {
     console.error('Failed to get user color:', error);
     return null;
+  } finally {
+    if (connection) connection.release();
   }
 }
 

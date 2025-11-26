@@ -35,8 +35,8 @@ router.get('/duel/:id', requireAuth, async (req, res) => {
       connection.release();
       console.log(`⏳ Duel ${duel.id} is still generating, rendering a waiting page.`);
       
-      // 我们可以复用 queue.njk 模板来显示等待信息
-      // 它上面的轮询脚本会自动处理后续的页面跳转
+      // We can reuse the queue.njk template to display waiting information
+      // The polling script will automatically handle the subsequent page navigation
       return res.render('generating.njk', {
         title: 'Whereami - Creating Your Duel',
         user: req.session.user,
@@ -74,7 +74,7 @@ router.get('/duel/:id', requireAuth, async (req, res) => {
 			// Calculate on the fly if not in database yet
 			const currentLocation = locations[duel.current_round - 1];
 
-			// 处理超时或无点击的情况 - 使用 NULL 而不是 -999
+			// Handle timeout or no-click situations - use NULL instead of -999
 			const player1GuessLat = duel.player1_guess_lat;
 			const player1GuessLng = duel.player1_guess_lng;
 			const player2GuessLat = duel.player2_guess_lat;
@@ -321,7 +321,7 @@ router.get('/leaderboard', async (req, res) => {
       const totalPlayers = countRows[0].total;
       const totalPages = Math.ceil(totalPlayers / limit);
       
-      // Get leaderboard data - 修复胜率计算
+				// Fix win rate calculation
       const [players] = await connection.execute(
         `SELECT 
           u.uid, u.username, u.user_type, u.elo_rating, u.peak_elo, u.elo_games,
@@ -347,7 +347,7 @@ router.get('/leaderboard', async (req, res) => {
         isCurrentUser: req.session.user && req.session.user.uid === player.uid
       }));
 
-      // Generate color mappings - 修复胜率处理
+			// Fix win rate handling
       const playersColor = {};
       const playersColorOfPeak = {};
       const winPercentage = {};
@@ -356,7 +356,7 @@ router.get('/leaderboard', async (req, res) => {
         playersColor[player.uid] = getColorByRating(player.elo_rating);
         playersColorOfPeak[player.uid] = getColorByRating(player.peak_elo);
         
-        // 确保 win_percentage 是数字类型
+				// Ensure win_percentage is numeric type
         const winRate = parseFloat(player.win_percentage) || 0;
         winPercentage[player.uid] = winRate.toFixed(2);
       });
@@ -446,7 +446,7 @@ router.get('/user/:uid', async (req, res) => {
       
       connection.release();
 
-      // 修复胜率计算
+				// Fix win rate calculation
       let winPercentageValue;
       if (!user.total_duels || user.total_duels === 0) {
         winPercentageValue = '-';
