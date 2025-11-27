@@ -12,7 +12,7 @@ This project is built with Node.js, Express, and Socket.IO to create a fast-pace
 
 ## Play It Online
 
-[简体中文](https://cn.akioi.me)(current unavailable) | [English](https://www.akioi.me)
+[简体中文](https://cn.akioi.me) (Currently Unavailable) | [English](https://www.akioi.me)
 
 ### [We will create a community soon]()
 
